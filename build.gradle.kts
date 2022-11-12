@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.zip.ZipFile
 
 plugins {
-    kotlin("jvm") version "1.6.10"
+    kotlin("jvm") version "1.7.20"
     id("me.qoomon.git-versioning") version "2.1.1"
     id("com.github.johnrengelman.shadow") version "5.2.0"
 }
@@ -33,19 +33,18 @@ sourceSets {
 }
 
 repositories {
-//    mavenLocal()
     mavenCentral()
     maven(url = "https://www.jitpack.io") {
         content {
             excludeModule("cf.wayzer", "ScriptAgent")
         }
     }
-    maven("https://maven.wayzer.workers.dev/")//ScriptAgent
+    maven("https://maven.tinylake.tk/")//ScriptAgent
 }
 
 dependencies {
-    val libraryVersion = "1.9.1.4"
-    val mindustryVersion = "v137"
+    val libraryVersion = "1.9.1.6"
+    val mindustryVersion = "v140"
     val pluginImplementation by configurations
     pluginImplementation("cf.wayzer:ScriptAgent:$libraryVersion")
     pluginImplementation("cf.wayzer:LibraryManager:1.4.1")
@@ -59,7 +58,7 @@ dependencies {
     implementation("cf.wayzer:PlaceHoldLib:5.2")
     implementation("io.github.config4k:config4k:0.4.1")
     //coreLib/DBApi
-    val exposedVersion = "0.39.2"
+    val exposedVersion = "0.40.1"
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
@@ -68,13 +67,13 @@ dependencies {
     implementation("com.github.Anuken.Mindustry:core:$mindustryVersion")
 //    implementation("com.github.TinyLake.MindustryX:core:v138.001")
     //coreMindustry/console
-    implementation("org.jline:jline-terminal:3.19.0")
-    implementation("org.jline:jline-reader:3.19.0")
+    implementation("org.jline:jline-terminal:3.21.0")
+    implementation("org.jline:jline-reader:3.21.0")
     //coreMindustry/utilContentsOverwrite
     implementation("cf.wayzer:ContentsTweaker:v2.0.1")
 
     //mirai
-    implementation("net.mamoe:mirai-core-api-jvm:2.10.0")
+    implementation("net.mamoe:mirai-core-api-jvm:2.12.3")
     //wayzer
     implementation("com.google.guava:guava:30.1-jre")
 }
