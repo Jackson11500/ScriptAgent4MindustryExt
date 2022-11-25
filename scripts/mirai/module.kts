@@ -1,6 +1,6 @@
 @file:Depends("coreLibrary")
 @file:Import("-Xjvm-default=enable", compileArg = true)
-@file:Import("net.mamoe:mirai-core-jvm:2.10.0", mavenDepends = true)
+@file:Import("net.mamoe:mirai-core-jvm:2.12.3", mavenDepends = true)
 @file:Import("mirai.lib.*", defaultImport = true)
 @file:Import("net.mamoe.mirai.event.*", defaultImport = true)
 @file:Import("net.mamoe.mirai.event.events.*", defaultImport = true)
@@ -10,6 +10,8 @@
 
 package mirai
 
+import coreLibrary.lib.event.RequestPermissionEvent
+import coreLibrary.lib.util.withContextClassloader
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import net.mamoe.mirai.BotFactory
@@ -51,6 +53,8 @@ inner class MyLoggerImpl(override val identity: String, private val botLog: Bool
     }
 }
 
+withContextClassloader { globalEventChannel() }//init
+
 onEnable {
     if (!enable) {
         println("机器人未开启,请先修改配置文件")
@@ -65,7 +69,9 @@ onEnable {
         networkLoggerSupplier = { MyLoggerImpl("Net ${it.id}", false) }
     }
     launch {
-        bot.login()
+        withContextClassloader {
+            bot.login()
+        }
     }
 }
 
@@ -77,4 +83,9 @@ Commands.controlCommand.let {
             channel.trySend(arg.joinToString(" "))
         }
     }
+}
+
+listenTo<RequestPermissionEvent> {
+    val subject = subject
+    if (subject is User) group += "qq${subject.id}"
 }
