@@ -2,14 +2,18 @@
 
 package coreLibrary.lib
 
+import cf.wayzer.placehold.DynamicVar
 import cf.wayzer.scriptAgent.define.Script
 import cf.wayzer.scriptAgent.events.ScriptDisableEvent
 import cf.wayzer.scriptAgent.listenTo
 import cf.wayzer.scriptAgent.thisContextScript
 import cf.wayzer.scriptAgent.util.DSLBuilder
+import coreLibrary.lib.PlaceHold.registerForType
 import coreLibrary.lib.util.ServiceRegistry
 import coreLibrary.lib.util.menu
+import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.coroutines.cancellation.CancellationException
 
 class CommandContext : DSLBuilder(), Cloneable {
     // Should init if not empty
@@ -52,6 +56,17 @@ class CommandContext : DSLBuilder(), Cloneable {
     fun returnReply(msg: PlaceHoldString): Nothing {
         reply(msg)
         CommandInfo.Return()
+    }
+
+    /** receiver for reply */
+    object ConsoleReceiver {
+        init {
+            registerForType<ConsoleReceiver>(thisContextScript()).apply {
+                registerChild("colorHandler", "颜色变量处理", DynamicVar.obj {
+                    Color::convertToAnsiCode
+                })
+            }
+        }
     }
 }
 
@@ -105,7 +120,11 @@ class CommandInfo(
             if (permission.isNotBlank() && !context.hasPermission(permission))
                 context.replyNoPermission()
             body(context)
-        } catch (_: Return) {
+        } catch (e: CancellationException) {
+            if (e !is Return)
+                thisContextScript().logger.log(
+                    Level.WARNING, "You should not cancel command. If you need exit, using CommandInfo.Return()", e
+                )
         } catch (e: Exception) {
             context.reply("[red]执行命令出现异常: {msg}".with("msg" to (e.message ?: "")))
             e.printStackTrace()
@@ -124,7 +143,7 @@ class CommandInfo(
         Return()
     }
 
-    object Return : Throwable("Direct return command") {
+    object Return : CancellationException("Direct return command") {
         @CommandBuilder
         operator fun invoke(): Nothing {
             throw this
@@ -156,17 +175,7 @@ open class Commands : CommandHandler, TabCompleter {
             ?: onHelp(context, false)
     }
 
-    open suspend fun onHelp(context: CommandContext, explicit: Boolean) {
-        val showDetail = context.checkArg("-v")
-        if (showDetail && !context.hasPermission("command.detail"))
-            return context.reply("[red]必须拥有command.detail权限才能查看完整help".with())
-        val page = context.arg.firstOrNull()?.toIntOrNull() ?: 1
-        context.reply(menu(context.prefix, getSubCommands(context).values.toSet().filter {
-            showDetail || it.permission.isBlank() || context.hasPermission(it.permission)
-        }, page, 10) {
-            context.helpInfo(it, showDetail)
-        })
-    }
+    open suspend fun onHelp(context: CommandContext, explicit: Boolean) = defaultHelpImpl(context, explicit)
 
     protected open fun addSub(name: String, command: CommandInfo, isAliases: Boolean) {
         val existed = subCommands[name.lowercase()]?.takeIf { it.script?.enabled == true } ?: let {
@@ -257,5 +266,21 @@ open class Commands : CommandHandler, TabCompleter {
                 "usage" to it.usage, "desc" to it.description, "detail" to detail
             )
         }
+
+        var defaultHelpImpl: suspend Commands.(CommandContext, explicit: Boolean) -> Unit =
+            impl@{ context, explicit ->
+                if (context.arg.isNotEmpty() && !explicit)
+                    return@impl context.reply("[red]无效指令,请使用/help查询".with())
+                val showDetail = context.checkArg("-v")
+                if (showDetail && !context.hasPermission("command.detail"))
+                    return@impl context.reply("[red]必须拥有command.detail权限才能查看完整help".with())
+
+                val page = context.arg.firstOrNull()?.toIntOrNull() ?: 1
+                context.reply(menu(context.prefix, getSubCommands(context).values.toSet().filter {
+                    showDetail || it.permission.isBlank() || context.hasPermission(it.permission)
+                }, page, 10) {
+                    context.helpInfo(it, showDetail)
+                })
+            }
     }
 }

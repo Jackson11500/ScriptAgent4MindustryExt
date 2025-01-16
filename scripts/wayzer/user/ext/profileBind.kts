@@ -3,7 +3,14 @@
 package wayzer.user.ext
 
 import cf.wayzer.placehold.PlaceHoldApi.with
+import coreLibrary.lib.config
+import coreMindustry.lib.CommandType
+import coreMindustry.lib.command
+import coreMindustry.lib.player
+import coreMindustry.lib.type
 import org.jetbrains.exposed.sql.transactions.transaction
+import wayzer.lib.dao.PlayerData
+import wayzer.lib.dao.PlayerProfile
 import wayzer.user.UserService
 import java.time.Duration
 import java.util.*
@@ -74,6 +81,7 @@ onEnable {
     }
 }
 
+
 command("genCode", "管理指令: 为用户生成随机绑定码") {
     usage = "<qq>"
     permission = "wayzer.user.genCode"
@@ -83,24 +91,27 @@ command("genCode", "管理指令: 为用户生成随机绑定码") {
     }
 }
 
+
 command("bind", "绑定用户") {
     usage = "<六位code>";this.type = CommandType.Client
     body {
-        val qq = arg.firstOrNull()?.toIntOrNull()?.let(::check)
-            ?: returnReply("[red]请输入正确的6位绑定码,如没有，可找群内机器人获取".with())
+        val account = arg.firstOrNull()?.toIntOrNull()?.let(::check)
+            ?: returnReply("[red]请输入正确的6位绑定码".with())
         PlayerData[player!!.uuid()].apply {
-            if (profile != null && (profile!!.qq != qq || secure(player!!)))
+            if (profile != null && (profile!!.account != account || secure(player!!)))
                 returnReply("[red]你已经绑定用户，如需解绑，请联系管理员".with())
             launch(Dispatchers.IO) {
                 transaction {
-                    bind(player!!, PlayerProfile.findOrCreate(qq).apply {
+                    bind(player!!, PlayerProfile.findOrCreate(account).apply {
                         this.onJoin(player!!)
                     })
                 }
                 userService.finishAchievement(profile!!, "绑定账号", 100, false)
                 userService.updateExp(profile!!, 0)
-                reply("[green]绑定账号[yellow]{qq}[green]成功.".with("qq" to qq))
+                reply("[green]绑定账号[yellow]{account}[green]成功.".with("account" to account))
             }
         }
     }
 }
+
+

@@ -1,22 +1,43 @@
 @file:Depends("wayzer/maps", "监测投票换图")
+@file:Depends("wayzer/user/achievement", "成就")
 @file:Depends("wayzer/user/userService")
 
 package wayzer.user.ext
 
 import cf.wayzer.placehold.DynamicVar
 import cf.wayzer.placehold.PlaceHoldApi
+import coreLibrary.lib.PlaceHold
+import coreLibrary.lib.config
+import coreLibrary.lib.registerVarForType
 import coreLibrary.lib.util.loop
+import coreLibrary.lib.with
+import coreMindustry.lib.broadcast
+import coreMindustry.lib.listen
+import mindustry.Vars.netServer
+import mindustry.Vars.state
+import mindustry.game.EventType
 import mindustry.game.Gamemode
 import mindustry.game.Team
 import mindustry.gen.Groups
+import mindustry.gen.Player
 import mindustry.world.Block
 import wayzer.MapChangeEvent
+import wayzer.lib.dao.PlayerData
+import wayzer.lib.dao.PlayerProfile
 import wayzer.user.UserService
 import java.io.Serializable
 import java.time.Duration
 import java.time.Instant
 import kotlin.math.ceil
 import kotlin.math.min
+
+val achievement = contextScript<wayzer.user.Achievement>()
+
+fun Player.achievement(name: String, exp: Int, broadcast: Boolean = false) {
+    val profile = PlayerData[uuid()].profile
+    if (profile != null)
+        achievement.finishAchievement(profile, name, exp, broadcast)
+}
 
 data class StatisticsData(
     var playedTime: Int = 0,
@@ -31,10 +52,10 @@ data class StatisticsData(
     val score
         get() = playedTime - 0.8 * idleTime +
                 0.6 * min(buildScore, 0.75f * playedTime) +
-                if (win) 600 * (1 - idleTime / playedTime) else 0
+                if (win) 600 else 0
 
     //结算经验计算
-    val exp get() = min(ceil(score * 15 / 3600 * rate).toInt(), (60 * rate).toInt())//3600点积分为15,40封顶
+    val exp get() = min(ceil(score * 15 / 3600 * rate).toInt(), (120 * rate).toInt()) * 5 * if (win) 3 else 1//3600点积分为15
 
     companion object {
         lateinit var teamWin: Team
@@ -140,19 +161,20 @@ fun onGameOver(winner: Team) {
         .sortedByDescending { it.second.score }
     val list = sortedData.map { (player, data) ->
         totalTime += data.playedTime - data.idleTime
-        "[white]{pvpState}{player.name}[white]({statistics.playedTime:分钟}/{statistics.idleTime:分钟}/{statistics.buildScore:%.1f})".with(
-            "player" to player, "statistics" to data, "pvpState" to if (data.win) "[green][胜][]" else ""
+        "[white]{pvpState}{player.name}[cyan]({statistics.playedTime:分钟}[white]/[gray]{statistics.idleTime:分钟}[white]/[lime]{statistics.buildScore:%.1f}[white])\n".with(
+            "player" to player, "statistics" to data, "pvpState" to (if (data.win) "[green][胜][]" else "") + if (data == sortedData.firstOrNull()?.second) "[green][MVP][]" else ""
         )
     }
     broadcast(
         """
         [yellow]本局游戏时长: {gameTime:分钟}
         [yellow]有效总贡献时长: {totalTime:分钟}
-        [yellow]贡献排行榜(时长/挂机/建筑): {list}
-    """.trimIndent().with("gameTime" to gameTime, "totalTime" to Duration.ofSeconds(totalTime.toLong()), "list" to list)
+        [yellow]贡献排行榜([cyan]时长/[gray]挂机/[lime]建筑): 
+        {list}
+    """.trimIndent().with("gameTime" to gameTime, "totalTime" to Duration.ofSeconds(totalTime.toLong()), "list" to list.joinToString(""))
     )
     StatisticsData.rate = 1.0
-    if (sortedData.isNotEmpty() && gameTime > Duration.ofMinutes(15)) {
+    if (sortedData.isNotEmpty() && gameTime > Duration.ofMinutes(10)) {
         if (activity.endTime > System.currentTimeMillis()) {
             StatisticsData.rate = activity.rate
             broadcast(
@@ -163,6 +185,11 @@ fun onGameOver(winner: Team) {
             )
         }
         launch(Dispatchers.IO) {
+            if (state.rules.pvp && gameTime > Duration.ofMinutes(90) && Groups.player.size() >= 10) {
+                Groups.player.forEach {
+                    it.achievement("[purple][膀胱局]", 200)
+                }
+            }
             val map = mutableMapOf<PlayerProfile, StatisticsData>()
             sortedData.groupBy { PlayerData.findByIdWithTransaction(it.first.id)?.profile }
                 .forEach { (key, value) ->
@@ -170,7 +197,11 @@ fun onGameOver(winner: Team) {
                     map[key] = value.maxByOrNull { it.second.score }!!.second
                 }
             map.forEach { (profile, data) ->
-                userService.updateExp(profile, data.exp, "游戏结算")
+                if (data == sortedData.first().second) {
+                    userService.updateExp(profile, data.exp * 3, "游戏结算(MVP)")
+                } else {
+                    userService.updateExp(profile, data.exp, "游戏结算")
+                }
             }
             depends("wayzer/user/ext/rank")
                 ?.import<(Map<PlayerProfile, Pair<Int, Boolean>>) -> Unit>("onGameOver")

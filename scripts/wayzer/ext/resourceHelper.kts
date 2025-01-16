@@ -8,6 +8,9 @@ import arc.util.serialization.JsonReader
 import arc.util.serialization.JsonValue
 import arc.util.serialization.JsonWriter
 import cf.wayzer.placehold.PlaceHoldApi.with
+import coreLibrary.lib.PlaceHoldString
+import coreLibrary.lib.config
+import coreMindustry.lib.game
 import mindustry.game.Gamemode
 import wayzer.MapInfo
 import wayzer.MapProvider
@@ -19,7 +22,7 @@ import mindustry.maps.Map as MdtMap
 
 name = "资源站配套脚本"
 
-val token by config.key("", "Mindustry资源站服务器Token")
+val token by config.key("9b3a6e98-7f24-4842-ac43-f770cfbc72be", "Mindustry资源站服务器Token")
 val webRoot by config.key("https://mdt.wayzer.top", "Mindustry资源站Api")
 
 val tokenOk get() = token.isNotBlank()
@@ -49,6 +52,7 @@ MapRegistry.register(this, object : MapProvider() {
             reply?.invoke("[red]本服未开启网络换图，请联系服主开启".with())
             return null
         }
+
         return withContext(Dispatchers.IO) {
             val info = let {
                 val infoUrl = "$webRoot/api/maps/thread/$id/latest"
@@ -71,7 +75,12 @@ MapRegistry.register(this, object : MapProvider() {
 
             val map = mindustry.maps.Map(object : Fi("file.msav") {
                 val downloadUrl = "$webRoot/api/maps/$hash/downloadServer?token=$token"
-                val bytes by lazy { URL(downloadUrl).readBytes() }
+                val bytes by lazy {
+                    URL(downloadUrl).openConnection().apply {
+                        readTimeout = 10_000
+                    }.getInputStream().readBytes()
+                }
+
                 override fun read() = ByteArrayInputStream(bytes)
                 override fun exists() = true
             }, tags.getInt("width", 0), tags.getInt("height"), tags, true)

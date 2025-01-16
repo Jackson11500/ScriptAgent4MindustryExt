@@ -9,7 +9,7 @@ import wayzer.lib.dao.PlayerData
 import wayzer.lib.dao.PlayerProfile
 
 suspend fun PlayerProfile.hasPermission(permission: String): Boolean {
-    return PermissionApi.handleThoughEvent(this, permission, listOf("qq$qq")).has
+    return PermissionApi.handleThoughEvent(this, permission, listOf("account$account")).has
 }
 
 suspend fun PlayerData.hasPermission(permission: String, skipSecure: Boolean): Boolean {
@@ -24,7 +24,7 @@ object PermissionExt {
                 val player = this.subject as? Player ?: return@listenTo
                 val profile = PlayerData[player.uuid()].secureProfile(player) ?: return@listenTo
                 val newGroup = group.toMutableList()
-                newGroup.add(1, "qq${profile.qq}")
+                newGroup.add(1, "account${profile.account}")
                 group = newGroup
             }
         }

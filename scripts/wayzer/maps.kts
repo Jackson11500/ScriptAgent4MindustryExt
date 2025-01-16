@@ -3,11 +3,20 @@
 
 package wayzer
 
+import arc.Core
 import arc.Events
 import cf.wayzer.placehold.DynamicVar
-import coreMindustry.lib.util.sendMenuPhone
+import coreLibrary.lib.PermissionApi
+import coreLibrary.lib.config
+import coreLibrary.lib.registerVarForType
+import coreLibrary.lib.util.menu
+import coreLibrary.lib.with
+import coreMindustry.lib.*
+import mindustry.Vars.*
+import mindustry.game.EventType
 import mindustry.game.Gamemode
 import mindustry.game.Team
+import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.io.SaveIO
 import java.time.Duration
@@ -28,19 +37,31 @@ MapRegistry.register(this, object : MapProvider() {
             enableIntern = true
         }
         val mapList = if (enableIntern) maps.all() else maps.customMaps()
-        return mapList.sortedBy { it.file.lastModified() }
+        return mapList.sortedBy { if (it.file.name().contains("观星台")) 0 else it.file.lastModified() }
             .mapIndexed { i, map -> MapInfo(i + 1, map, bestMode(map)) }
             .filterWhen(!enableIntern && filter != "all") { it.map.custom }
             .filterByMode(filter)
     }
 
+    val pvpMaps = listOf(
+        "B1",
+        "C1",
+        "C3",
+        "C4",
+        "C5",
+        "D1",
+        "D2",
+        "D3",
+    )
+    //我是懒狗
     private fun bestMode(map: mindustry.maps.Map): Gamemode {
-        return when (map.file.name()[0]) {
-            'A' -> Gamemode.attack
-            'P' -> Gamemode.pvp
-            'S' -> Gamemode.survival
-            'C' -> Gamemode.sandbox
-            'E' -> Gamemode.editor
+        return when {
+            pvpMaps.any { map.file.name().startsWith(it, true) } -> Gamemode.pvp
+            map.file.name().startsWith("attack", true) -> Gamemode.attack
+            map.file.name().startsWith("pvp", true) -> Gamemode.pvp
+            map.file.name().startsWith("survival", true) -> Gamemode.survival
+            map.file.name().startsWith("sandbox", true) -> Gamemode.sandbox
+            map.file.name().startsWith("editor", true) -> Gamemode.editor
             else -> Gamemode.survival
         }
     }
@@ -65,9 +86,10 @@ registerVarForType<MdtMap>().apply {
 
 command("maps", "列出服务器地图") {
     usage = "[page/filter] [page]"
+    permission = "wayzer.maps.host"
     aliases = listOf("地图")
     body {
-        val page = arg.lastOrNull()?.toIntOrNull()
+        val page = arg.lastOrNull()?.toIntOrNull() ?: 1
         val filter = arg.getOrNull(0)?.toLowerCase()?.let { filter ->
             if (filter.matches(Regex("\\d+"))) return@let null
             if (filter !in MapRegistry.supportFilter.map { it.toLowerCase() }) {
@@ -76,9 +98,9 @@ command("maps", "列出服务器地图") {
             filter
         } ?: "display"
         val maps = MapRegistry.getMaps(filter).sortedBy { it.id }
-        sendMenuPhone("服务器地图 By WayZer", maps, page, mapsPrePage) { info ->
+        reply(menu("服务器地图", maps, page, mapsPrePage) { info ->
             "[red]{info.id}  [green]{info.map.name}[blue] | {info.mode}".with("info" to info)
-        }
+        })
     }
 }
 onEnable {
@@ -111,22 +133,19 @@ listen<EventType.GameOverEvent> { event ->
         else "&lcGame over! Reached wave &ly${state.wave}&lc with &ly${Groups.player.size()}&lc players online on map &ly${state.map.name()}&lc."
     )
     if (GameOverEvent(event.winner).emit().cancelled) return@listen
-    val map = MapRegistry.nextMapInfo(MapManager.current)
     val winnerMsg: Any =
         if (state.rules.pvp) "[YELLOW] {team.colorizeName} 队胜利![]".with("team" to event.winner) else ""
     val msg = """
                 | [SCARLET]游戏结束![]"
                 | {winnerMsg}
-                | 下一张地图为:[accent]{nextMap.name}[] By: [accent]{nextMap.author}[]
-                | 下一场游戏将在 {waitTime} 秒后开始
-            """.trimMargin().with("nextMap" to map.map, "winnerMsg" to winnerMsg, "waitTime" to waitingTime.seconds)
+                | 即将回到观星台..
+            """.trimMargin().with("winnerMsg" to winnerMsg)
     broadcast(msg, gameOverMsgType, quite = true)
-    ContentHelper.logToConsole("Next Map is ${map.map.name()}(ID:${map.id})")
     launch {
         val now = state.map
         delay(waitingTime.toMillis())
         if (state.map != now) return@launch//已经通过其他方式换图
-        MapManager.loadMap(map)
+        MapManager.loadMap(MapRegistry.findById(1)!!)
     }
 }
 command("host", "管理指令: 换图") {

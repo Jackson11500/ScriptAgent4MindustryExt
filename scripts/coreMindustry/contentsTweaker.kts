@@ -1,5 +1,5 @@
 @file:Import("https://www.jitpack.io/", mavenRepository = true)
-@file:Import("cf.wayzer:ContentsTweaker:v2.0.2", mavenDependsSingle = true)
+@file:Import("cf.wayzer:ContentsTweaker:v2.1.2", mavenDependsSingle = true)
 
 package coreMindustry
 
@@ -38,7 +38,7 @@ val md5Digest = MessageDigest.getInstance("md5")!!
  */
 fun addPatch(name: String, patch: String): String {
     val md5 = Base64Coder.encode(md5Digest.digest(patch.toByteArray())).concatToString()
-    val name2 = if (name.startsWith("@")) name else "$name-$md5"
+    val name2 = if (name.startsWith("$")) name else "$name-$md5"
     patchMap[name2] = patch
     PatchHandler.handle(JsonIO.read(null, patch))
     PatchHandler.doAfterHandle()

@@ -3,7 +3,7 @@ package wayzer.reGrief
 import arc.struct.IntMap
 import mindustry.entities.Fires
 
-val limit by config.key(500, "火焰格数限制")
+val limit by config.key(2000, "火焰格数限制")
 
 val fireMap by lazy {
     Fires::class.java.getDeclaredField("map").run {

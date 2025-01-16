@@ -2,7 +2,9 @@
 
 package wayzer.map
 
+import mindustry.net.Administration
 import wayzer.MapManager
+import wayzer.MapRegistry
 import java.time.Duration
 
 name = "自动Host"
@@ -17,6 +19,6 @@ listen<EventType.ServerLoadEvent> {
             ContentHelper.logToConsole("[AutoHost]Already host, pass!")
             return@launch
         }
-        MapManager.loadMap()
+        MapManager.loadMap(MapRegistry.findById(1) ?: MapRegistry.nextMapInfo())
     }
 }

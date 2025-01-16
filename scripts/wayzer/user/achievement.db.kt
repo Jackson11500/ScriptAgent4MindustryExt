@@ -4,9 +4,11 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.Query
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.timestamp
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.select
 import wayzer.lib.dao.PlayerProfile
 import wayzer.lib.dao.util.NeedTransaction
@@ -36,5 +38,11 @@ class AchievementEntity(id: EntityID<Int>) : IntEntity(id) {
                 true
             } else false
         }
+
+        @NeedTransaction
+        fun player(profile: EntityID<Int>): Query {
+            return T.select { (T.profile eq profile) }
+        }
+
     }
 }

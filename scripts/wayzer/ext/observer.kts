@@ -2,6 +2,10 @@
 
 package wayzer.ext
 
+import coreLibrary.lib.PermissionApi
+import coreLibrary.lib.with
+import coreMindustry.lib.*
+
 val teams = contextScript<wayzer.map.BetterTeam>()
 
 command("ob", "切换为观察者") {

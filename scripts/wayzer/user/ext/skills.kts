@@ -90,7 +90,7 @@ companion object Api {
     }
 }
 Api.script = this
-
+/*
 skill("mono", "技能: 召唤采矿机,一局限一次,PVP禁用", "矿机") {
     if (state.rules.bannedBlocks.contains(Blocks.airFactory))
         returnReply("[red]该地图采矿机已禁封,禁止召唤".with())
@@ -103,3 +103,4 @@ skill("mono", "技能: 召唤采矿机,一局限一次,PVP禁用", "矿机") {
     }
     broadcastSkill("采矿机?")
 }
+ */

@@ -2,14 +2,15 @@ package wayzer.reGrief
 
 import arc.Events
 import arc.util.Interval
+import mindustry.Vars
 import mindustry.gen.BuildingTetherc
-import mindustry.gen.Groups
 import mindustry.gen.TimedKillc
 import mindustry.gen.Unit
 import kotlin.math.min
 
-val unitToWarn by config.key(190, "开始警告的单位数")
-val unitToKill by config.key(220, "单位数上限，禁止产生新的")
+val unitToWarn by config.key(1000, "开始警告的单位数")
+val unitToKill by config.key(2000, "单位数上限，禁止产生新的")
+val rate by config.key(2, "非pvp模式单位数量倍数")
 
 val interval = Interval(1)
 listen<EventType.UnitUnloadEvent> { e ->
@@ -23,9 +24,9 @@ listen<EventType.UnitUnloadEvent> { e ->
 
     val count = e.unit.team.data().unitCount
     when {
-        count >= unitToKill -> {
+        count >= unitToKill * if (Vars.state.rules.pvp) rate else 1 -> {
             launch(Dispatchers.gamePost) {
-                val toKill = count - unitToKill
+                val toKill = count - unitToKill * if (Vars.state.rules.pvp) rate else 1
                 val m = Groups.unit.filter { it.team == e.unit.team && it.maxHealth < 1000f && !it.isPlayer }
                     .filterNot { it is TimedKillc || it is BuildingTetherc }
                     .sortedBy { it.health }
@@ -41,42 +42,19 @@ listen<EventType.UnitUnloadEvent> { e ->
             }
         }
 
-        count >= unitToWarn -> {
+        count >= unitToWarn * if (Vars.state.rules.pvp) rate else 1 -> {
             alert("[yellow]警告: 建筑过多单位,可能造成服务器卡顿,当前: {count}".with("count" to count))
         }
     }
 }
 
 listen<EventType.UnitSpawnEvent> { e ->
-    if (e.unit.team.data().unitCount > 5000 && !state.gameOver) {
-        broadcast("[red]敌方单位超过5000,自动投降".with())
+    if (e.unit.team.data().unitCount > 30000 && !state.gameOver) {
+        broadcast("[red]敌方单位超过30000,自动投降".with())
         state.gameOver = true
         Events.fire(EventType.GameOverEvent(state.rules.waveTeam))
         Core.app.post {
             Groups.unit.filter { it.team == state.rules.waveTeam }.forEach(Unit::kill)
         }
     }
-}
-
-var gameOverWave = -1
-listen<EventType.WaveEvent> {
-    if (gameOverWave > 0 && state.wave > gameOverWave && !state.gameOver) {
-        broadcast("[red]到达终结波,自动投降".with())
-        state.gameOver = true
-        Events.fire(EventType.GameOverEvent(state.rules.waveTeam))
-        return@listen
-    }
-    val flySpawn = spawner.countFlyerSpawns()
-    val groundSpawn = spawner.countGroundSpawns()
-    val sum = state.rules.spawns.sum {
-        it.getSpawned(state.wave - 1) * if (it.type.flying) flySpawn else groundSpawn
-    }
-    if (sum >= 3000) {
-        state.rules.spawns.clear()
-        gameOverWave = state.wave
-    }
-}
-
-listen<EventType.ResetEvent> {
-    gameOverWave = -1
 }

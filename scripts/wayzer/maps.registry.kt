@@ -11,16 +11,19 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import mindustry.Vars
 import mindustry.game.Gamemode
-import mindustry.game.Rules
 import mindustry.io.SaveIO
 import mindustry.maps.Map
+import kotlin.random.Random
 
 data class MapInfo(
     val id: Int, val map: Map, val mode: Gamemode,
     val beforeReset: (() -> Unit)? = null,
     /**use for generator or save*/
     val load: (() -> Unit) = {
-        Vars.world.loadMap(map)
+        @Suppress("INACCESSIBLE_TYPE")
+        SaveIO.load(map.file, Vars.world.filterContext(map))
+        if (Vars.state.teams.getActive().none { it.hasCore() })
+            error("Map has no cores!")
     }
 ) {
     override fun equals(other: Any?): Boolean {
@@ -31,6 +34,8 @@ data class MapInfo(
     override fun hashCode(): Int {
         return id
     }
+
+    val randomId: Int = Random.nextInt()
 }
 
 abstract class MapProvider {
@@ -54,6 +59,7 @@ abstract class MapProvider {
             .filterWhen(filter == "survive") { it.mode == Gamemode.survival }
             .filterWhen(filter == "attack") { it.mode == Gamemode.attack }
             .filterWhen(filter == "pvp") { it.mode == Gamemode.pvp }
+            .filterWhen(filter.startsWith("Name|")) { it.map.file.name().startsWith(filter.split("|")[1]) }
     }
 }
 
@@ -75,7 +81,7 @@ object MapRegistry : MapProvider() {
 
     override val supportFilter: Set<String> get() = providers.flatMapTo(mutableSetOf()) { it.supportFilter }
     override fun getMaps(filter: String) = providers.flatMapTo(mutableSetOf()) {
-        if (filter !in it.supportFilter) emptyList()
+        if (filter !in it.supportFilter && !filter.startsWith("Name|")) emptyList()
         else it.getMaps(filter)
     }
 

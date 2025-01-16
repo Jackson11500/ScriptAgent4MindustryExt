@@ -17,9 +17,11 @@ import wayzer.lib.dao.util.TransactionHelper
 import wayzer.lib.dao.util.WithTransactionHelper
 import java.time.Duration
 import java.time.Instant
+import kotlin.random.Random
 
 class PlayerProfile(id: EntityID<Int>) : IntEntity(id) {
-    var qq by T.qq
+    var account by T.account
+    var password by T.password
     var name by T.lastName
     var totalExp by T.totalExp
     var totalTime by T.totalTime //time in s
@@ -27,6 +29,7 @@ class PlayerProfile(id: EntityID<Int>) : IntEntity(id) {
     var lastTime by T.lastTime
     var lang by T.lang
     var online by T.online
+    var cardDraws by T.cardDraws
 
     val controlling get() = online == Setting.serverId
     val players = mutableSetOf<Player>()
@@ -88,7 +91,8 @@ class PlayerProfile(id: EntityID<Int>) : IntEntity(id) {
     }
 
     object T : IntIdTable("PlayerProfile") {
-        val qq = long("qq").uniqueIndex()
+        val account = long("account").uniqueIndex()
+        val password  = varchar("password", length = 32).uniqueIndex()
         val lastName = varchar("lastName", length = 32).nullable()
         val totalExp = integer("totalExp").default(0)
         val totalTime = integer("totalTime").default(0)
@@ -96,6 +100,7 @@ class PlayerProfile(id: EntityID<Int>) : IntEntity(id) {
         val online = varchar("server", length = 16).nullable()
         val registerTime = timestamp("registerTime").defaultExpression(CurrentTimestamp())
         val lastTime = timestamp("lastTime").defaultExpression(CurrentTimestamp())
+        val cardDraws = integer("cardDraws").default(0)
     }
 
     companion object : IntEntityClass<PlayerProfile>(T) {
@@ -104,7 +109,7 @@ class PlayerProfile(id: EntityID<Int>) : IntEntity(id) {
             .build<Int, PlayerProfile>()
         private val idCache = CacheBuilder.newBuilder()
             .expireAfterAccess(Duration.ofMinutes(1))
-            .build<Long, Int>()//qq to id
+            .build<Long, Int>()//account to id
         val allOnline = hashSetOf<PlayerProfile>()
 
         override fun findById(id: EntityID<Int>): PlayerProfile? {
@@ -113,24 +118,35 @@ class PlayerProfile(id: EntityID<Int>) : IntEntity(id) {
             }?.also { cache.put(id.value, it) }
         }
 
-        fun findByQQ(qq: Long): PlayerProfile? {
-            val id = idCache.getIfPresent(qq)
+        fun findByAccount(account: Long): PlayerProfile? {
+            val id = idCache.getIfPresent(account)
             return if (id != null) findById(id)
             else transaction {
-                find { T.qq eq qq }.singleOrNull()?.also {
+                find { T.account eq account }.singleOrNull()?.also {
                     cache.put(it.id.value, it)
-                    idCache.put(it.qq, it.id.value)
+                    idCache.put(it.account, it.id.value)
                 }
             }
         }
 
-        fun findOrCreate(qq: Long) = findByQQ(qq) ?: transaction {
+        fun create(account: Long, defPassword: String = Random.nextInt(10000, 100000).toString()) = transaction {
             new {
-                this.qq = qq
+                this.account = account
+                this.password = defPassword
             }.also { it.flush() }
         }.also {
             cache.put(it.id.value, it)
-            idCache.put(it.qq, it.id.value)
+            idCache.put(it.account, it.id.value)
+        }
+
+        fun findOrCreate(account: Long, defPassword: String = Random.nextInt(10000, 100000).toString()) = findByAccount(account) ?: transaction {
+            new {
+                this.account = account
+                this.password = defPassword
+            }.also { it.flush() }
+        }.also {
+            cache.put(it.id.value, it)
+            idCache.put(it.account, it.id.value)
         }
     }
 }

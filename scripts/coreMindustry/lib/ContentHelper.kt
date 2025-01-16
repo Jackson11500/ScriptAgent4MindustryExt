@@ -1,25 +1,21 @@
 package coreMindustry.lib
 
-import arc.util.CommandHandler
 import arc.util.Log
 import arc.util.Strings
-import cf.wayzer.scriptAgent.Config
-import cf.wayzer.scriptAgent.util.DSLBuilder
 import coreLibrary.lib.*
-import mindustry.Vars.netServer
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Iconc
 import mindustry.gen.Player
 
 object ContentHelper {
-    fun logToConsole(text: String) = logToConsole(text.with())
+    fun logToConsole(text: String) {
+        Log.info(Strings.stripColors(ColorApi.handle(text, ColorApi::consoleColorHandler)))
+    }
+
     fun logToConsole(text: PlaceHoldString) {
-        val parsed = "{text}".with(
-            "text" to text,
-            "receiver" to "console", "receiver.colorHandler" to Color::convertToAnsiCode
-        ).toString()
-        Log.info(Strings.stripColors(ColorApi.handle(parsed, ColorApi::consoleColorHandler)))
+        val parsed = text.with("receiver" to CommandContext.ConsoleReceiver).toString()
+        logToConsole(parsed)
     }
 
     fun mindustryColorHandler(color: ColorApi.Color): String {
@@ -56,7 +52,7 @@ fun broadcast(
 }
 
 fun Player?.sendMessage(text: PlaceHoldString, type: MsgType = MsgType.Message, time: Float = 10f) {
-    if (this == null) ContentHelper.logToConsole(text.toString())
+    if (this == null) ContentHelper.logToConsole(text)
     else {
         if (con == null) return
         MindustryDispatcher.runInMain {
@@ -73,17 +69,10 @@ fun Player?.sendMessage(text: PlaceHoldString, type: MsgType = MsgType.Message, 
 }
 
 fun PlaceHoldString.toPlayer(player: Player): String = ColorApi.handle(
-    "{text}".with("text" to this, "player" to player, "receiver" to player).toString(),
+    with("player" to player, "receiver" to player).toString(),
     ContentHelper::mindustryColorHandler
 )
 
+@Deprecated("use PlaceHoldString", ReplaceWith("sendMessage(text.with(), type, time)", "coreLibrary.lib.with"))
 fun Player?.sendMessage(text: String, type: MsgType = MsgType.Message, time: Float = 10f) =
     sendMessage(text.with(), type, time)
-
-val Config.clientCommands by DSLBuilder.dataKeyWithDefault {
-    netServer?.clientCommands ?: CommandHandler("/")
-}
-val Config.serverCommands by DSLBuilder.dataKeyWithDefault {
-    println("serverCommands Not exists")
-    CommandHandler("")
-}

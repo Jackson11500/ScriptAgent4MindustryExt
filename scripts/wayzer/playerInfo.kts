@@ -3,12 +3,21 @@ package wayzer
 import arc.util.Strings
 import cf.wayzer.placehold.DynamicVar
 import coreLibrary.DBApi
+import coreLibrary.lib.registerVarForType
 import coreLibrary.lib.util.loop
+import coreLibrary.lib.with
+import coreMindustry.lib.*
+import mindustry.content.StatusEffects
+import mindustry.entities.units.StatusEntry
+import mindustry.game.EventType
 import mindustry.gen.Groups
+import mindustry.gen.Player
 import mindustry.net.Administration
 import mindustry.net.Packets
 import mindustry.net.Packets.ConnectPacket
 import org.jetbrains.exposed.sql.transactions.transaction
+import wayzer.lib.dao.PlayerData
+import wayzer.lib.dao.PlayerProfile
 import wayzer.lib.dao.util.TransactionHelper
 import wayzer.lib.event.ConnectAsyncEvent
 import java.time.Duration
@@ -20,8 +29,10 @@ name = "基础: 玩家数据"
 registerVarForType<Player>().apply {
     registerChild("ext", "模块扩展数据", DynamicVar.obj { PlayerData[it.uuid()] })
     registerChild("profile", "统一账号信息(可能不存在)", DynamicVar.obj { PlayerData[it.uuid()].profile })
-    registerChild("prefix", "名字前缀,可通过prefix.xxx变量注册", DynamicVar.obj { resolveVar(it, "prefix.*.toString", "") })
-    registerChild("suffix", "名字后缀,可通过suffix.xxx变量注册", DynamicVar.obj { resolveVar(it, "suffix.*.toString", "") })
+    registerChild(
+        "prefix", "名字前缀,可通过prefix.xxx变量注册", DynamicVar.obj { resolveVar(it, "prefix.*.toString", "") })
+    registerChild(
+        "suffix", "名字后缀,可通过suffix.xxx变量注册", DynamicVar.obj { resolveVar(it, "suffix.*.toString", "") })
 }
 
 registerVarForType<Administration.PlayerInfo>().apply {
@@ -38,7 +49,7 @@ registerVarForType<PlayerData>().apply {
 }
 
 registerVarForType<PlayerProfile>().apply {
-    registerChild("id", "绑定的账号ID(qq)", DynamicVar.obj { it.qq })
+    registerChild("id", "绑定的账号ID(account)", DynamicVar.obj { it.account })
     registerChild("totalExp", "总经验", DynamicVar.obj { it.totalExp })
     registerChild("onlineTime", "总在线时间", DynamicVar.obj { Duration.ofSeconds(it.totalTime.toLong()) })
     registerChild("registerTime", "注册时间", DynamicVar.obj { Date.from(it.registerTime) })
@@ -62,15 +73,17 @@ listenPacket2ServerAsync<ConnectPacket> { con, packet ->
         return@listenPacket2ServerAsync false
     }
     val old = transaction { PlayerData.findById(packet.uuid) }
-    val event = ConnectAsyncEvent(con, packet, old).emitAsync {
-        if (it != Event.Priority.NormalE) return@emitAsync
-        withContext(Dispatchers.IO) {
-            data = transaction {
-                PlayerData.findOrCreate(packet.uuid, con.address, packet.name).apply {
-                    refresh(flush = true)
-                    profile//warm up cache
+    val event = ConnectAsyncEvent(con, packet, old).apply {
+        emitAsync {
+            data =
+                withContext(Dispatchers.IO) {
+                    transaction {
+                        PlayerData.findOrCreate(packet.uuid, con.address, packet.name).apply {
+                            refresh(flush = true)
+                            profile//warm up cache
+                        }
+                    }
                 }
-            }
         }
     }
     if (event.cancelled) con.kick("[red]拒绝入服: ${event.reason}")
@@ -97,11 +110,11 @@ listen<EventType.PlayerLeave> {
 }
 
 onEnable {
-    launch {
+    launch(Dispatchers.game) {
         DBApi.DB.awaitInit()
-        TransactionHelper.withAsyncFlush(this) {
+        transaction {
             Groups.player.toList().forEach {
-                PlayerData[it.uuid()].onJoin(it)
+                PlayerData.findByIdWithTransaction(it.uuid())?.onJoin(it)
             }
         }
         loop(Dispatchers.IO) {

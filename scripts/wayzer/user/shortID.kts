@@ -4,10 +4,22 @@ import arc.util.serialization.Base64Coder
 import cf.wayzer.placehold.DynamicVar
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
+import coreLibrary.lib.registerVarForType
+import coreMindustry.lib.listen
+import mindustry.Vars.content
+import mindustry.ctype.ContentType
+import mindustry.game.EventType
 import mindustry.gen.Groups
+import mindustry.gen.Iconc
+import mindustry.gen.Player
 import mindustry.net.Administration
+import mindustry.type.Item
+import mindustry.type.Liquid
+import mindustry.type.UnitType
+import mindustry.world.Block
 import java.security.MessageDigest
 import java.time.Duration
+import kotlin.random.Random
 
 val md5Digest = MessageDigest.getInstance("md5")!!
 fun shortStr(str: String): String {
@@ -25,6 +37,17 @@ fun shortStr(str: String): String {
 fun Player.shortID() = shortStr(uuid())
 fun shortID(p: Player) = shortStr(p.uuid())
 export(::shortStr, ::shortID)
+
+val lists = buildList {
+    content.getBy<UnitType>(ContentType.unit).forEach { add(it.emoji()) }
+    content.getBy<Block>(ContentType.block).forEach { add(it.emoji()) }
+    content.getBy<Liquid>(ContentType.liquid).forEach { add(it.emoji()) }
+    content.getBy<Item>(ContentType.item).forEach { add(it.emoji()) }
+}
+
+fun Player.singeID(): String {
+    return lists.random(Random(usid().hashCode()))
+}
 
 val shortIDs: Cache<String, String> = CacheBuilder.newBuilder()
     .expireAfterWrite(Duration.ofMinutes(60)).build()
@@ -45,7 +68,7 @@ export(this::getUUIDbyShort)
 
 registerVarForType<Player>().apply {
     registerChild("shortID", "uuid 3位前缀,可以展现给其他玩家", DynamicVar.obj { it.shortID() })
-    registerChild("suffix.9shortID", "名字后缀：3位ID", DynamicVar.obj { "|[gray]${it.shortID()}[]" })
+    registerChild("suffix.9shortID", "名字后缀：3位ID", DynamicVar.obj { "|[gray]${it.shortID()}[]${it.singeID()}" })
 }
 registerVarForType<Administration.PlayerInfo>().apply {
     registerChild("shortID", "uuid 3位前缀,可以展现给其他玩家", DynamicVar.obj { shortStr(it.id) })

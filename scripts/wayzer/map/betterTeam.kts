@@ -1,9 +1,16 @@
 package wayzer.map
 
 import arc.Events
+import coreLibrary.lib.PermissionApi
+import coreLibrary.lib.with
+import coreMindustry.lib.*
+import mindustry.Vars.netServer
+import mindustry.Vars.state
 import mindustry.core.NetServer
+import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Groups
+import mindustry.gen.Player
 import mindustry.world.blocks.storage.CoreBlock
 import wayzer.map.BetterTeam.AssignTeamEvent
 
@@ -40,7 +47,6 @@ val allTeam: Set<Team>
 val teams = mutableMapOf<String, Team>()
 customLoad(::teams, teams::putAll)
 var bannedTeam = emptySet<Team>()
-var keepTeamsOnce = false
 
 onEnable {
     val backup = netServer.assigner
@@ -53,6 +59,10 @@ onEnable {
     updateBannedTeam(true)
 }
 listen<EventType.PlayEvent> { updateBannedTeam(true) }
+listen<EventType.ResetEvent> {
+    bannedTeam = emptySet()
+    teams.clear()
+}
 //custom gameover
 listen<EventType.BlockDestroyEvent> { e ->
     if (state.gameOver || !state.rules.pvp) return@listen
@@ -65,21 +75,19 @@ listen<EventType.BlockDestroyEvent> { e ->
             }
         }
 }
-listen<EventType.ResetEvent> {
-    if (keepTeamsOnce) {
-        keepTeamsOnce = false
-        return@listen
-    }
-    teams.clear()
+//fix bug
+listen<EventType.PlayerConnectionConfirmed> {
+    //As team assigned in connect may be wrong.
+    changeTeam(it.player)
 }
 
-fun updateBannedTeam(force: Boolean = false) {
+fun updateBannedTeam(force: Boolean = false, forcePVP: Boolean = false) {
     if (force || bannedTeam.isEmpty())
         bannedTeam = state.rules.tags.get("@banTeam")?.split(',').orEmpty()
             .mapNotNull { Team.all.getOrNull(it.toIntOrNull() ?: -1) }.toSet()
     Groups.player.filter { it.team() in bannedTeam }.forEach {
-        changeTeam(it)
-        it.sendMessage("[yellow]因为原队伍被禁用,你已自动切换队伍".with(), MsgType.InfoMessage)
+        changeTeam(it, forcePVP = forcePVP)
+        it.sendMessage("[yellow]因为原队伍被禁用,你已自动切换队伍".with(), MsgType.Message)
     }
 }
 
@@ -88,20 +96,21 @@ fun updateBannedTeam(force: Boolean = false) {
  * 2. 尝试使用[teams]队伍
  * 3. 从[allTeam]随机分配队伍
  */
-fun randomTeam(player: Player, group: Iterable<Player> = Groups.player): Team {
+fun randomTeam(player: Player, group: Iterable<Player> = Groups.player, forcePVP: Boolean = false): Team {
     val allTeam = allTeam
     if (teams[player.uuid()]?.run { this != spectateTeam && this !in allTeam } == true)
         teams.remove(player.uuid())
     val fromEvent = AssignTeamEvent(player, group, teams[player.uuid()]).emit().team
     if (fromEvent != null) return fromEvent
-    if (!state.rules.pvp) return state.rules.defaultTeam
+    if (!state.rules.pvp && !forcePVP) return state.rules.defaultTeam
     return allTeam.shuffled()
         .minByOrNull { group.count { p -> p.team() == it && player != p } }
         ?: state.rules.defaultTeam
 }
 
-fun changeTeam(p: Player, team: Team = randomTeam(p)) {
-    val newTeam = ChangeTeamEvent(p, team).emit().team
+fun changeTeam(p: Player, team: Team? = null, forcePVP: Boolean = false) {
+    val nteam = team ?: randomTeam(p, forcePVP = forcePVP)
+    val newTeam = ChangeTeamEvent(p, nteam).emit().team
     teams[p.uuid()] = newTeam
     p.clearUnit()
     p.team(newTeam)
@@ -124,7 +133,9 @@ command("team", "管理指令: 修改自己或他人队伍(PVP模式)") {
                 ?: returnReply("[red]找不到玩家,请使用/list查询正确的3位id".with())
         } ?: player ?: returnReply("[red]请输入玩家ID".with())
         changeTeam(player, team)
-        broadcast("[green]管理员更改了{player.name}[green]为{team.colorizeName}".with("player" to player, "team" to team))
+        broadcast(
+            "[green]管理员更改了{player.name}[green]为{team.colorizeName}".with("player" to player, "team" to team)
+        )
     }
 }
 

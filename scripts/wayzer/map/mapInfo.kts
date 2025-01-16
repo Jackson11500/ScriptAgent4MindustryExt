@@ -9,7 +9,7 @@ customLoad(::customModeIntroduce, customModeIntroduce::addAll)
 
 fun addModeIntroduce(mode: String, introduce: String) {
     if (customModeIntroduce.any { it.contains("===[gold]$mode[]===") }) return
-    customModeIntroduce += "[magenta]===[gold]$mode[]===[white]\n$introduce"
+    customModeIntroduce += "[magenta]===[gold]$mode[]===[white]\n$introduce\n"
 }
 export(this::addModeIntroduce)
 listen<EventType.ResetEvent> { customModeIntroduce.clear() }

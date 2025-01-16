@@ -1,5 +1,9 @@
-@file:Depends("coreMindustry/utilNext", "调用菜单")
+@file:Depends("coreMindustry/menu", "调用菜单")
 @file:Depends("coreMindustry/utilMapRule", "修改核心单位,单位属性")
+@file:Suppress("unused", "unused", "PropertyName", "PropertyName", "PropertyName", "PropertyName", "PropertyName",
+    "PropertyName", "PropertyName", "PropertyName", "PropertyName", "PropertyName", "PropertyName", "PropertyName",
+    "KotlinDeprecation", "KotlinDeprecation", "KotlinDeprecation", "Deprecated"
+)
 
 package mapScript
 
@@ -9,28 +13,29 @@ import arc.struct.ObjectMap
 import arc.util.Align
 import arc.util.Time
 import coreLibrary.lib.util.loop
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.yield
+import coreMindustry.lib.game
+import coreMindustry.lib.listen
 import mindustry.Vars
+import mindustry.Vars.state
+import mindustry.Vars.world
 import mindustry.content.*
 import mindustry.entities.Units
+import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Iconc.*
 import mindustry.gen.Player
-import mindustry.gen.Sounds
 import mindustry.type.StatusEffect
 import mindustry.type.UnitType
 import mindustry.world.Block
-import mindustry.world.blocks.defense.turrets.ItemTurret
 import mindustry.world.blocks.storage.CoreBlock
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
 import kotlin.math.ceil
 import kotlin.math.log10
 import kotlin.random.Random
 
-val menu = contextScript<coreMindustry.UtilNext>()
+val menu = contextScript<coreMindustry.Menu>()
 
 /**@author xkldklp*/
 
@@ -39,23 +44,16 @@ val cooldown: ObjectIntMap<String> = ObjectIntMap()//上交冷却
 val teamMoney: ObjectMap<Team, Int> = ObjectMap()//团队资源点
 val lastUnitType: ObjectMap<String, UnitType> = ObjectMap()//死前用的单位 还原所需要贡献点为单位容量*1.5
 
-val copperToCoreHealth by lazy { Vars.state.rules.tags.getInt("@copperToCoreHealth", 8) }
-val copperToUnitHealth by lazy { Vars.state.rules.tags.getInt("@copperToUnitHealth", 4) }
-val oreGrowSpeed by lazy { Vars.state.rules.tags.getInt("@oreGrowSpeed", 16) }
-val oreCostIncreaseTime = Vars.state.rules.tags.getInt("@oreCostIncreaseTime", 480) * 1000f
+val copperToCoreHealth = state.rules.tags.getInt("@copperToCoreHealth", 8)
+val copperToUnitHealth = state.rules.tags.getInt("@copperToUnitHealth", 4)
+val oreGrowSpeed = state.rules.tags.getInt("@oreGrowSpeed", 16)
+val oreCostIncreaseTime = state.rules.tags.getInt("@oreCostIncreaseTime", 480) * 1000f
 
-val T1ItemCap by lazy { Vars.state.rules.tags.getInt("@T1ItemCap", 30) }
-val T2ItemCap by lazy { Vars.state.rules.tags.getInt("@T2ItemCap", 60) }
-val T3ItemCap by lazy { Vars.state.rules.tags.getInt("@T3ItemCap", 120) }
-val T4ItemCap by lazy { Vars.state.rules.tags.getInt("@T4ItemCap", 480) }
-val T5ItemCap by lazy { Vars.state.rules.tags.getInt("@T5ItemCap", 1440) }
-val T6ItemCap by lazy { Vars.state.rules.tags.getInt("@T6ItemCap", 2880) }
-
-val startTeamMoney by lazy { Vars.state.rules.tags.getInt("@startTeamMoney", 250) }
-val T2BaseNeed by lazy { Vars.state.rules.tags.getInt("@T2BaseNeed", 2400) }
-val T3BaseNeed by lazy { Vars.state.rules.tags.getInt("@T3BaseNeed", 7200) }
-val T4BaseNeed by lazy { Vars.state.rules.tags.getInt("@T4BaseNeed", 24000) }
-val MaxBaseNeed by lazy { Vars.state.rules.tags.getInt("@MaxBaseNeed", 48000) }
+val startTeamMoney = state.rules.tags.getInt("@startTeamMoney", 250)
+val T2BaseNeed = state.rules.tags.getInt("@T2BaseNeed", 2400)
+val T3BaseNeed = state.rules.tags.getInt("@T3BaseNeed", 7200)
+val T4BaseNeed = state.rules.tags.getInt("@T4BaseNeed", 24000)
+val MaxBaseNeed = state.rules.tags.getInt("@MaxBaseNeed", 48000)
 
 val missile = arrayOf(
     UnitTypes.anthicus.weapons.get(0).bullet.spawnUnit,
@@ -168,7 +166,7 @@ fun Player.upgrade(u: UnitType){
     val unit = unit()
     unit(u.spawn(team(), unit).apply {
         spawnedByCore = true
-        if (!(u in Tier6units)) {
+        if (u !in Tier6units) {
             if (type != UnitTypes.horizon && type != UnitTypes.locus && type != UnitTypes.precept && type != UnitTypes.vanquish && type != UnitTypes.conquer) {
                 apply(StatusEffects.freezing, Float.MAX_VALUE)
             }
@@ -180,14 +178,14 @@ fun Player.upgrade(u: UnitType){
         apply(StatusEffects.invincible, 4f * 60)
         shield = maxShield()
     })
-    if (!(u in Tier6units)) lastUnitType.put(uuid(),u)
+    if (u !in Tier6units) lastUnitType.put(uuid(),u)
 }
 
 fun CoreBuild.upgrade(type: Block, text: String = ""){
-    Vars.world.tile(Vars.world.width() - 3,Vars.world.height() - 3).setNet(Blocks.coreNucleus, team, 0)//临时核心保存核心资源
+    world.tile(world.width() - 3, world.height() - 3).setNet(Blocks.coreNucleus, team, 0)//临时核心保存核心资源
     tile.setNet(type, team, 0)
-    Vars.world.tile(Vars.world.width() - 3,Vars.world.height() - 3).setNet(Blocks.air)
-    broadcast("$text".with("text" to text), quite = true)
+    world.tile(world.width() - 3, world.height() - 3).setNet(Blocks.air)
+    Call.sendMessage(text)
 }
 
 suspend fun Player.upgradeMenu() {
@@ -322,20 +320,20 @@ suspend fun Player.upgradeMenu() {
                             addMoney(unit().stack.amount)
                         unit().stack.amount = 0
                     },
-                    "上交1/4资源${(unit().stack.amount / 4).toInt()}" to {
+                    "上交1/4资源${(unit().stack.amount / 4)}" to {
                         if (unit().stack.amount != 0)
-                            addMoney((unit().stack.amount / 4).toInt())
-                        unit().stack.amount -= (unit().stack.amount / 4).toInt()
+                            addMoney((unit().stack.amount / 4))
+                        unit().stack.amount -= (unit().stack.amount / 4)
                         upgradeMenu()
                     }
                 )) else if (unit().stack.amount != 0) add(listOf(
-                    "远程上交全部资源(50%手续费)\n向下取整\n${unit().stack.amount}->${(unit().stack.amount / 2).toInt()}" to {
-                        addMoney((unit().stack.amount / 2).toInt())
+                    "远程上交全部资源(50%手续费)\n向下取整\n${unit().stack.amount}->${(unit().stack.amount / 2)}" to {
+                        addMoney((unit().stack.amount / 2))
                         unit().stack.amount = 0
                     },
-                    "上交1/4资源(50%手续费)\n向下取整\n${(unit().stack.amount / 4).toInt()}->${(unit().stack.amount / 8).toInt()}" to {
-                        addMoney((unit().stack.amount / 8).toInt())
-                        unit().stack.amount -= (unit().stack.amount / 4).toInt()
+                    "上交1/4资源(50%手续费)\n向下取整\n${(unit().stack.amount / 4)}->${(unit().stack.amount / 8)}" to {
+                        addMoney((unit().stack.amount / 8))
+                        unit().stack.amount -= (unit().stack.amount / 4)
                         upgradeMenu()
                     }
                 ))
@@ -369,7 +367,7 @@ suspend fun Player.buffMenu(){
         sendMessage("[red]Tier6单位无法购买buff")
         return
     }
-    menu.sendMenuBuilder<Unit>(
+    menu.sendMenuBuilder(
         this, 30_000, "buff菜单",
         """
             [yellow]使用贡献点购买/清除 buff/debuff
@@ -452,14 +450,14 @@ suspend fun Player.buffMenu(){
 }
 
 suspend fun Player.infoMenu() {
-    menu.sendMenuBuilder<Unit>(
+    menu.sendMenuBuilder(
         this, 30_000, "单位详细",
         """
             查看各个单位的属性和可升级兵种
         """.trimIndent()
     ) {
         fun showInfo(type: UnitType, upgradeType1: UnitType? = null, upgradeType2: UnitType? = null, upgradeType3: UnitType? = null): Pair<String, suspend () -> Unit> {
-            return "${type.emoji()}" to suspend {
+            return type.emoji() to suspend {
                 val text = buildString{
                     appendLine("${type.emoji()}${type.localizedName}${type.emoji()}")
                     appendLine("生命值${type.health}/护甲值${type.armor}")
@@ -549,7 +547,7 @@ onEnable {
         //T1
         //flare
         var unitType = UnitTypes.flare
-        registerMapRule(unitType::itemCapacity) { T1ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T1ItemCap", 30) }
         registerMapRule(unitType.weapons.get(0).bullet::damage) { 12f }
         registerMapRule(unitType.weapons.get(0).bullet::buildingDamageMultiplier) { 1.5f }
         registerMapRule(unitType::armor) { 0f }
@@ -557,15 +555,15 @@ onEnable {
         //T2
         //risso,horzion
         unitType = UnitTypes.risso
-        registerMapRule(unitType::itemCapacity) { T2ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T2ItemCap", 60) }
         registerMapRule(unitType::flying) { true }
         registerMapRule(unitType::health) { 140f }
         registerMapRule(unitType::armor) { 0f }
-        registerMapRule(unitType.weapons.get(0)::minShootVelocity) { 0f }
 
         unitType = UnitTypes.horizon
-        registerMapRule(unitType::itemCapacity) { T2ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T2ItemCap", 60) }
         registerMapRule(unitType.weapons.get(0).bullet::collidesAir) { true }
+        registerMapRule(unitType.weapons.get(0)::minShootVelocity) { 0f }
         registerMapRule(unitType.weapons.get(0).bullet::status) { StatusEffects.corroded }
         registerMapRule(unitType.weapons.get(0).bullet::statusDuration) { 4f * 60 }
         registerMapRule(unitType::health) { 120f }
@@ -575,7 +573,7 @@ onEnable {
         //T3
         //minke,oxynoe,locus
         unitType = UnitTypes.minke
-        registerMapRule(unitType::itemCapacity) { T3ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T3ItemCap", 120) }
         registerMapRule(unitType::flying) { true }
         registerMapRule(unitType::health) { 320f }
         registerMapRule(unitType.weapons.get(2).bullet::damage) { 60f }
@@ -584,7 +582,7 @@ onEnable {
         registerMapRule(unitType::armor) { 0f }
 
         unitType = UnitTypes.oxynoe
-        registerMapRule(unitType::itemCapacity) { T3ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T3ItemCap", 120) }
         registerMapRule(unitType::flying) { true }
         registerMapRule(unitType::health) { 280f }
         registerMapRule(unitType.weapons.get(0).bullet::collidesAir) { true }
@@ -595,7 +593,7 @@ onEnable {
         registerMapRule(unitType::armor) { 0f }
 
         unitType = UnitTypes.locus
-        registerMapRule(unitType::itemCapacity) { T3ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T3ItemCap", 120) }
         registerMapRule(unitType::flying) { true }
         registerMapRule(unitType::health) { 400f }
         registerMapRule(unitType::armor) { 5f }
@@ -606,7 +604,7 @@ onEnable {
         //T4
         //bryde,cyerce,precept,mega,anthicus
         unitType = UnitTypes.bryde
-        registerMapRule(unitType::itemCapacity) { T4ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T4ItemCap", 480) }
         registerMapRule(unitType::flying) { true }
         registerMapRule(unitType::health) { 600f }
         registerMapRule(unitType::armor) { 0f }
@@ -619,7 +617,7 @@ onEnable {
         registerMapRule(unitType.weapons.get(0)::shootStatusDuration) { 0.8f * 60 }
 
         unitType = UnitTypes.cyerce
-        registerMapRule(unitType::itemCapacity) { T4ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T4ItemCap", 480) }
         registerMapRule(unitType::flying) { true }
         registerMapRule(unitType::health) { 550f }
         registerMapRule(unitType::armor) { 0f }
@@ -627,7 +625,7 @@ onEnable {
         registerMapRule(unitType.weapons.get(2)::shootStatusDuration) { 0.8f * 60 }
 
         unitType = UnitTypes.precept
-        registerMapRule(unitType::itemCapacity) { T4ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T4ItemCap", 480) }
         registerMapRule(unitType::flying) { true }
         registerMapRule(unitType::health) { 750f }
         registerMapRule(unitType::armor) { 7f }
@@ -639,7 +637,7 @@ onEnable {
         registerMapRule(unitType.weapons.get(0).bullet::statusDuration) { 1.6f * 60 }
 
         unitType = UnitTypes.mega
-        registerMapRule(unitType::itemCapacity) { T4ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T4ItemCap", 480) }
         registerMapRule(unitType::health) { 440f }
         registerMapRule(unitType::armor) { 0f }
         registerMapRule(unitType.weapons.get(0).bullet::buildingDamageMultiplier) { 1.5f }
@@ -650,7 +648,7 @@ onEnable {
         registerMapRule(unitType.weapons.get(2).bullet::statusDuration) { 1f * 60 }
 
         unitType = UnitTypes.anthicus
-        registerMapRule(unitType::itemCapacity) { T4ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T4ItemCap", 480) }
         registerMapRule(unitType::legCount) { 0 }
         registerMapRule(unitType::flying) { true }
         registerMapRule(unitType.weapons.get(0).bullet.spawnUnit::itemCapacity) { Int.MAX_VALUE }
@@ -665,7 +663,7 @@ onEnable {
         //T5
         //obviate,sei,antumbra,vanquish,tecta,quell
         unitType = UnitTypes.obviate
-        registerMapRule(unitType::itemCapacity) { T5ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T5ItemCap", 1440) }
         registerMapRule(unitType::armor) { 0f }
         registerMapRule(unitType::health) { 680f }
         registerMapRule(unitType.weapons.get(0).bullet::buildingDamageMultiplier) { 4f }
@@ -673,7 +671,7 @@ onEnable {
         registerMapRule(unitType.weapons.get(0).bullet.intervalBullet.lightningType::buildingDamageMultiplier) { 1f }
 
         unitType = UnitTypes.sei
-        registerMapRule(unitType::itemCapacity) { T5ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T5ItemCap", 1440) }
         registerMapRule(unitType::flying) { true }
         registerMapRule(unitType::armor) { 0f }
         registerMapRule(unitType::health) { 860f }
@@ -682,7 +680,7 @@ onEnable {
         registerMapRule(unitType.weapons.get(1).bullet::damage) { 24f }
 
         unitType = UnitTypes.antumbra
-        registerMapRule(unitType::itemCapacity) { T5ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T5ItemCap", 1440) }
         registerMapRule(unitType::armor) { 0f }
         registerMapRule(unitType::health) { 1200f }
         registerMapRule(unitType.weapons.get(0).bullet::damage) { 9f }
@@ -690,7 +688,7 @@ onEnable {
         registerMapRule(unitType.weapons.get(5).bullet::damage) { 33f }
 
         unitType = UnitTypes.vanquish
-        registerMapRule(unitType::itemCapacity) { T5ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T5ItemCap", 1440) }
         registerMapRule(unitType::flying) { true }
         registerMapRule(unitType::armor) { 12f }
         registerMapRule(unitType::health) { 1500f }
@@ -703,7 +701,7 @@ onEnable {
         registerMapRule(unitType.weapons.get(1).bullet::buildingDamageMultiplier) { 3f }
 
         unitType = UnitTypes.tecta
-        registerMapRule(unitType::itemCapacity) { T5ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T5ItemCap", 1440) }
         registerMapRule(unitType::legCount) { 0 }
         registerMapRule(unitType::flying) { true }
         registerMapRule(unitType::armor) { 0f }
@@ -715,7 +713,7 @@ onEnable {
         registerMapRule(unitType.weapons.get(0).bullet::splashDamage) { 45f }
 
         unitType = UnitTypes.quell
-        registerMapRule(unitType::itemCapacity) { T5ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T5ItemCap", 1440) }
         registerMapRule(unitType.weapons.get(0).bullet.spawnUnit::itemCapacity) { Int.MAX_VALUE }
         registerMapRule(unitType.weapons.get(0).bullet.spawnUnit.weapons.get(0).bullet::splashDamage) { 240f }
         registerMapRule(unitType.weapons.get(0).bullet.spawnUnit::lifetime) { 2.4f * 60 }
@@ -730,14 +728,14 @@ onEnable {
         //T6
         //omura,navanax,eclipse,conquer,collaris,disrupt
         unitType = UnitTypes.omura
-        registerMapRule(unitType::itemCapacity) { T6ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T6ItemCap", 2880) }
         registerMapRule(unitType::flying) { true }
         registerMapRule(unitType::armor) { 0f }
         registerMapRule(unitType::health) { 2500f }
         registerMapRule(unitType.weapons.get(0).bullet::damage) { 550f }
 
         unitType = UnitTypes.eclipse
-        registerMapRule(unitType::itemCapacity) { T6ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T6ItemCap", 2880) }
         registerMapRule(unitType::armor) { 0f }
         registerMapRule(unitType::health) { 2800f }
         registerMapRule(unitType.weapons.get(2).bullet::splashDamage) { 25f }
@@ -745,7 +743,7 @@ onEnable {
         registerMapRule(unitType.weapons.get(0).bullet::statusDuration) { 5f * 60 }
 
         unitType = UnitTypes.conquer
-        registerMapRule(unitType::itemCapacity) { T6ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T6ItemCap", 2880) }
         registerMapRule(unitType::flying) { true }
         registerMapRule(unitType::armor) { 15f }
         registerMapRule(unitType::health) { 3000f }
@@ -754,7 +752,7 @@ onEnable {
         registerMapRule(unitType.weapons.get(0).bullet::statusDuration) { 4.8f * 60 }
 
         unitType = UnitTypes.collaris
-        registerMapRule(unitType::itemCapacity) { T6ItemCap }
+        registerMapRule(unitType::itemCapacity) { state.rules.tags.getInt("@T6ItemCap", 2880) }
         registerMapRule(unitType::legCount) { 0 }
         registerMapRule(unitType::flying) { true }
         registerMapRule(unitType::armor) { 0f }
@@ -763,12 +761,12 @@ onEnable {
         registerMapRule(unitType.weapons.get(0)::shootStatusDuration) { 3f * 60 }
 
     }
-    Vars.state.rules.apply{
+    state.rules.apply{
         unitCap = 999999
         fire = false
         bannedUnits.add(UnitTypes.flare)
     }
-    Vars.state.teams.getActive().each{
+    state.teams.getActive().each{
         teamMoney.put(it.team, startTeamMoney)
         launch(Dispatchers.game){
             delay(5000L)
@@ -830,10 +828,10 @@ onEnable {
     loop(Dispatchers.game){
         Groups.unit.each{
             //单位边界穿梭
-            if (it.x / 8 >= Vars.world.width() - 1) it.set(24f, it.y)
-            if (it.x / 8 <= 1) it.set(Vars.world.width() * 8f - 24, it.y)
-            if (it.y / 8 >= Vars.world.height() - 1) it.set(it.x, 24f)
-            if (it.y / 8 <= 1) it.set(it.x, Vars.world.height() * 8f - 24)
+            if (it.x / 8 >= world.width() - 1) it.set(24f, it.y)
+            if (it.x / 8 <= 1) it.set(world.width() * 8f - 24, it.y)
+            if (it.y / 8 >= world.height() - 1) it.set(it.x, 24f)
+            if (it.y / 8 <= 1) it.set(it.x, world.height() * 8f - 24)
             //单位回血
             val use = ((it.maxHealth - it.health) / copperToUnitHealth).toInt()
                 .coerceAtMost(it.stack().amount)
@@ -850,10 +848,10 @@ onEnable {
         Groups.bullet.each{
             //子弹边界穿梭
             val vel = it.vel
-            if (it.x / 8 >= Vars.world.width() - 1) it.set(8f,it.y)
-            if (it.x / 8 <= 0) it.set(Vars.world.width() * 8f - 8,it.y)
-            if (it.y / 8 >= Vars.world.height() - 1) it.set(it.x,8f)
-            if (it.y / 8 <= 0) it.set(it.x,Vars.world.height() * 8f - 8)
+            if (it.x / 8 >= world.width() - 1) it.set(8f,it.y)
+            if (it.x / 8 <= 0) it.set(world.width() * 8f - 8,it.y)
+            if (it.y / 8 >= world.height() - 1) it.set(it.x,8f)
+            if (it.y / 8 <= 0) it.set(it.x, world.height() * 8f - 8)
             it.vel = vel
         }
         state.teams.getActive().each { data ->
@@ -910,7 +908,7 @@ onEnable {
     loop(Dispatchers.game){
         delay(1000)
         repeat(oreGrowSpeed){
-            val tile = Vars.world.tiles.getn(
+            val tile = world.tiles.getn(
                 Random.nextInt(0, world.width()),
                 Random.nextInt(0, world.height())
             )

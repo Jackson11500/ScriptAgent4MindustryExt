@@ -1,9 +1,27 @@
 package wayzer.map
 
+import arc.func.Cons
+import arc.math.Mathf
+import arc.util.Time
+import arc.util.Tmp
+import coreLibrary.lib.config
 import coreLibrary.lib.util.loop
+import coreLibrary.lib.with
+import coreMindustry.lib.broadcast
+import coreMindustry.lib.game
+import coreMindustry.lib.listen
+import coreMindustry.lib.sendMessage
+import mindustry.Vars.state
+import mindustry.content.Blocks
+import mindustry.content.Fx
+import mindustry.content.StatusEffects
+import mindustry.game.EventType
 import mindustry.game.Gamemode
+import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Unit
+import mindustry.world.blocks.defense.BaseShield
+import mindustry.world.blocks.storage.CoreBlock.CoreBuild
 import java.time.Duration
 import kotlin.math.ceil
 
@@ -17,6 +35,7 @@ val Unit.inEnemyArea: Boolean
         return closestCore.team != team() && (state.rules.polygonCoreProtection || dst(closestCore) < state.rules.enemyCoreBuildRadius)
     }
 
+
 listen<EventType.PlayEvent> {
     launch {
         var leftTime = state.rules.tags.getInt("@pvpProtect", time)
@@ -25,8 +44,18 @@ listen<EventType.PlayEvent> {
             delay(1000)
             Groups.unit.forEach {
                 if (it.inEnemyArea) {
-                    it.player?.sendMessage("[red]PVP保护时间,禁止进入敌方区域".with())
-                    it.kill()
+                    it.health -= (it.health / 2).coerceAtLeast(it.maxHealth / 2)
+                    if (it.health <= 0) {
+                        it.health -= 999999
+                        return@forEach
+                    }
+                    it.set(it.closestCore())
+                    it.snapInterpolation()
+                    it.apply(StatusEffects.unmoving, 2 * 60f)
+                    if (it.player != null) {
+                        Call.setPosition(it.player.con, it.closestCore().x, it.closestCore().y)
+                        it.player.sendMessage("[red]PVP保护时间,禁止进入敌方区域".with())
+                    }
                 }
             }
         }
@@ -48,3 +77,4 @@ listen<EventType.PlayEvent> {
 listen<EventType.ResetEvent> {
     coroutineContext[Job]?.cancelChildren()
 }
+
