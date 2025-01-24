@@ -4,6 +4,7 @@ import mindustry.gen.Call
 import mindustry.gen.Player
 import mindustry.type.ItemStack
 import inscription.Effect
+import org.jetbrains.exposed.dao.id.EntityID
 
 class ResourcesEffect(
     name: String,
@@ -15,7 +16,7 @@ class ResourcesEffect(
     weight: Int = 100
 ): Effect.BaseEffect(name, desc, id, "资源", weight) {
 
-    override suspend fun active(player: Player, level: Int, rate: Float) {
+    override suspend fun active(player: Player, level: Int, rate: Float, iid: EntityID<Int>) {
         items.forEach {
             val core = player.team().core() ?: return@forEach
             if (core.items.has(it.item)) {

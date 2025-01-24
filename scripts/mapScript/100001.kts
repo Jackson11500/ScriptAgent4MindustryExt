@@ -390,10 +390,12 @@ val rules  by autoInit { buildList {
                 delay(20_000)
             }
         }))
-        add(Rule("[yellow]物资丢失", "[red]没有初始物资", 24, fun() {
+        add(Rule("[yellow]物资丢失", "[red]初始物资减少50%-100%", 24, fun() {
             launch(Dispatchers.game) {
                 delay(500)
-                Team.sharded.core().items.clear()
+                Team.sharded.core().items.each { item, amount ->
+                    Team.sharded.core().items.remove(item, (amount * (Random.nextFloat() - 0.5f)).toInt().coerceAtMost(amount))
+                }
             }
         }))
     }.toMutableList())
@@ -473,7 +475,7 @@ onEnable {
                     }
                 }
                 gameRules.forEach {
-                    achieveAll("[green][${it.name}]", it.cost * 50)
+                    achieveAll("[green][律令-${it.name}[]]", it.cost * 50)
                 }
             }
         }

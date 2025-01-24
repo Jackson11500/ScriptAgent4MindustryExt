@@ -55,7 +55,7 @@ MapRegistry.register(this, object : MapProvider() {
 
         return withContext(Dispatchers.IO) {
             val info = let {
-                val infoUrl = "$webRoot/api/maps/thread/$id/latest"
+                val infoUrl = "$webRoot/maps/thread/$id/latest"
                 val infoCon = URL(infoUrl).openConnection() as HttpURLConnection
                 infoCon.connect()
                 if (infoCon.responseCode != HttpURLConnection.HTTP_OK) {
@@ -74,7 +74,7 @@ MapRegistry.register(this, object : MapProvider() {
             }
 
             val map = mindustry.maps.Map(object : Fi("file.msav") {
-                val downloadUrl = "$webRoot/api/maps/$hash/downloadServer?token=$token"
+                val downloadUrl = "$webRoot/maps/$hash/downloadServer?token=$token"
                 val bytes by lazy {
                     URL(downloadUrl).openConnection().apply {
                         readTimeout = 10_000

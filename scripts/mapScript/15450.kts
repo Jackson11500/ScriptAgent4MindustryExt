@@ -205,38 +205,45 @@ data class PlayerData(
         respawnTime = Time.millis() + (respawnNeedTime / player.team().data.respawnTimeMultiplier.pow(2f)).toLong()
         val data = unit.data.lastDamage?.getPlayerData()
         if (data != null) {
-            if (data.level - level <= 2 && level > 2 && (unit.data.area().levelLoot || level >= 20 )) {
+            if (data.level - level <= 2 && level > 2 && (unit.data.area().levelLoot || level >= 20)) {
                 player.sendMessage("[red]等级被掠夺！")
                 level--
                 if (data.level < 20) {
                     data.level++
                 }
-                var rate = 1f
-                if (unit.data.player?.getPlayerData() != null) {
-                    rate = unit.data.player!!.getPlayerData()!!.reward
+            }
+            var rate = 1f
+            if (unit.data.player?.getPlayerData() != null) {
+                rate = unit.data.player!!.getPlayerData()!!.reward
+                unit.data.player!!.getPlayerData()!!.reward = (unit.data.player!!.getPlayerData()!!.reward - 0.2f).coerceAtLeast(0.5f)
+            }
+            val killExp =
+                (level + 1f).pow(2) * rate * data.player.unit().data.area().killMultiplier * expMultiplier * data.player.team().data.expMultiplier * if (data.level - level < -1) 1.5f else 1f
+            data.exp += killExp
+            data.player.sendMessage("[green]击杀！经验+${killExp} ${if (data.level - level < -1) "[cyan]跨级击杀！经验1.5倍" else ""}")
+            data.kills++
+            if (data.reward <= 1f) {
+                data.reward = 1f
+            }
+            data.reward += 0.25f
+            if (data.kills >= 5) {
+                broadcast("{player} 杀疯了！ {kills} 连杀！".with("player" to data.player.name, "kills" to data.kills))
+            }
+            if (data.kills == 10) {
+                broadcast(
+                    "[red]OVERDRIVE [white]{player} 获得了弱化和加速..".with(
+                        "player" to data.player.name,
+                        "kills" to data.kills
+                    )
+                )
+                data.player.unit().apply {
+                    apply(StatusEffects.sapped, Float.POSITIVE_INFINITY)
+                    apply(StatusEffects.fast, Float.POSITIVE_INFINITY)
                 }
-                val killExp = (level + 1f).pow(2) * rate * data.player.unit().data.area().killMultiplier * expMultiplier * data.player.team().data.expMultiplier * if (data.level - level < -1) 1.5f else 1f
-                data.exp += killExp
-                data.player.sendMessage("[green]击杀！经验+${killExp} ${if (data.level - level < -1) "[cyan]跨级击杀！经验1.5倍" else ""}")
-                data.kills++
-                if (data.reward <= 1f) {
-                    data.reward = 1f
-                }
-                data.reward += 0.25f
-                if (data.kills >= 5) {
-                    broadcast("{player} 杀疯了！ {kills} 连杀！".with("player" to data.player.name, "kills" to data.kills))
-                }
-                if (data.kills == 10) {
-                    broadcast("[red]OVERDRIVE [white]{player} 获得了弱化和加速..".with("player" to data.player.name, "kills" to data.kills))
-                    data.player.unit().apply {
-                        apply(StatusEffects.sapped, Float.POSITIVE_INFINITY)
-                        apply(StatusEffects.fast, Float.POSITIVE_INFINITY)
-                    }
-                }
-                data.souls += data.kills.coerceAtMost(10) * data.player.unit().data.area().serialKillMultiplier
-                if (unit.data.player?.getPlayerData() != null) {
-                    unit.data.player!!.getPlayerData()!!.reward = 1f
-                }
+            }
+            data.souls += data.kills.coerceAtMost(10) * data.player.unit().data.area().serialKillMultiplier
+            if (unit.data.player?.getPlayerData() != null) {
+                unit.data.player!!.getPlayerData()!!.reward = 1f
             }
         }
     }

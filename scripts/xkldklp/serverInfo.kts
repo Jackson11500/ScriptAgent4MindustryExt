@@ -13,7 +13,7 @@ import mindustry.net.Packets
 import mindustryX.events.SendPacketEvent
 import kotlin.math.max
 
-val playerMax by config.key(30 ,"服务器最大人数")
+val playerMax by config.key(20 ,"服务器最大人数")
 
 fun refreshPlayerLimit() {
     Vars.netServer.admins.playerLimit = max(playerMax, Groups.player.size() + 1)
@@ -25,7 +25,7 @@ onEnable {
         delay(1_000)
     }
     loop {
-        Administration.Config.serverName.set("${randomColor()}Star${randomColor()}Legends [white]~ [cyan]星辰传说")
+        Administration.Config.serverName.set("${randomColor()}Star${randomColor()}Legends [white]~ [cyan]星[yellow]辰[green]传说")
         delay(1_000)
     }
 }

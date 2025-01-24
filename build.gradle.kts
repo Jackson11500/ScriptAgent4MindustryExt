@@ -39,16 +39,22 @@ repositories {
             excludeModule("cf.wayzer", "ScriptAgent")
         }
     }
-    maven("https://maven.tinylake.tk/")//ScriptAgent
+    maven {
+        url = uri("https://packages.aliyun.com/maven/repository/2102713-release-0NVzQH/")
+        credentials {
+            username = "609f6fb4aa6381038e01fdee"
+            password = "h(7NRbbUWYrN"
+        }
+    }
 }
 
 dependencies {
-    val libraryVersion = "1.9.1.6"
-    val mindustryVersion = "v146"
+    val libraryVersion = "1.10.6.2"
+    val mindustryVersion = "ca40f700fb" //v146.004
     val pluginImplementation by configurations
     pluginImplementation("cf.wayzer:ScriptAgent:$libraryVersion")
     pluginImplementation("cf.wayzer:LibraryManager:1.4.1")
-    pluginImplementation("com.github.Anuken.Mindustry:core:$mindustryVersion")
+    pluginImplementation("com.github.TinyLake.MindustryX:core:$mindustryVersion")
     pluginImplementation(files("lib/core-release-1.1-sources.jar"))
     pluginImplementation(files("lib/core-release-1.1.jar"))
 
@@ -66,7 +72,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
 
     //coreMindustry
-    implementation("com.github.Anuken.Mindustry:core:$mindustryVersion")
+    implementation("com.github.TinyLake.MindustryX:core:$mindustryVersion")
     implementation(files("lib/core-release-1.1-sources.jar"))
     implementation(files("lib/core-release-1.1.jar"))
 //    implementation("com.github.TinyLake.MindustryX:core:v138.001")

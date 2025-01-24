@@ -1,6 +1,7 @@
 package main
 
 import arc.graphics.Color
+import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.game.Team
 import mindustry.type.Item

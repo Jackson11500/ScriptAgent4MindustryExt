@@ -66,6 +66,8 @@ val textInput = contextScript<coreMindustry.UtilTextInput>()
 val achievement = contextScript<wayzer.user.Achievement>()
 val kVars = contextScript<xkldklp.KVars>()
 
+val localhost = "h1.getmc.cn:33455"
+
 fun Player.achievement(name: String, exp: Int, broadcast: Boolean = false) {
     val profile = PlayerData[uuid()].profile
     if (profile != null)
@@ -425,7 +427,7 @@ class AccountMenu(private val player: Player): MenuBuilder<Unit>() {
         }
     }
 
-    fun bind(account: Long = Core.settings.getLong("latestAccount", 0) + 1, password: String = Random.nextInt(10000,100000).toString()) {
+    fun bind(account: Long = Core.settings.getLong("latestAccount", 0) + 1, password: String) {
         val data = PlayerData[player.uuid()]
         launch(Dispatchers.IO) {
             transaction {
@@ -435,7 +437,7 @@ class AccountMenu(private val player: Player): MenuBuilder<Unit>() {
             }
             userService.finishAchievement(data.profile!!, "[green][绑定账号]", 100, false)
             userService.updateExp(data.profile!!, 0)
-            Call.connect(player.con, "43.248.96.246", 8840)
+            Call.connect(player.con, localhost, 8840)
             if (Core.settings.getLong("latestAccount", 0) + 1 == account) {
                 Core.settings.put("latestAccount", account)
             }
@@ -463,7 +465,7 @@ class AccountMenu(private val player: Player): MenuBuilder<Unit>() {
                                 launch(Dispatchers.IO) {
                                     transaction {
                                         if (account.password == password) {
-                                            bind(account.account)
+                                            bind(account.account, password)
                                         } else {
                                             player.sendMessage("[red]密码不正确")
                                         }
@@ -501,7 +503,7 @@ class AccountMenu(private val player: Player): MenuBuilder<Unit>() {
                             transaction {
                                 data.unbind()
                             }
-                            Call.connect(player.con, "43.248.96.246", 8840)
+                            Call.connect(player.con, localhost, 8840)
                         }
                     }
                     else
@@ -897,14 +899,16 @@ class InscriptionMenu(private val player: Player): MenuBuilder<Unit>() {
         transaction {
             title = inscription.name(showInscriptionEntity)
             msg = buildString {
-                appendLine(inscription.name(showInscriptionEntity))
-                append("[white]")
-                appendLine(inscription.effect(showInscriptionEntity)?.name)
-                append("[white]")
-                appendLine(inscription.effect(showInscriptionEntity)?.desc)
-                append("[white]")
-                appendLine(inscription.prefix(showInscriptionEntity)?.prefix)
-                append("[white]")
+                append(inscription.name(showInscriptionEntity))
+                appendLine("[white]")
+                append(inscription.effect(showInscriptionEntity)!!.name)
+                append(" ("+"%.${3}f".format(effect.getEffectChance(inscription.effect(showInscriptionEntity)!!))+"%)")
+                appendLine("[white]")
+                append(inscription.effect(showInscriptionEntity)?.desc)
+                appendLine("[white]")
+                append(inscription.prefix(showInscriptionEntity)?.prefix)
+                append(" ("+"%.${3}f".format(prefix.getPrefixChance(inscription.prefix(showInscriptionEntity)!!))+"%)")
+                appendLine("[white]")
                 append(inscription.prefix(showInscriptionEntity)?.desc)
             }
 

@@ -2,11 +2,12 @@ package coreMindustry.util
 
 import arc.graphics.Colors
 import arc.struct.Queue
+import kotlinx.coroutines.delay
 import mindustry.content.UnitTypes
 import mindustry.entities.units.BuildPlan
 import mindustry.game.Schematics
 import mindustry.game.Team
-import mindustry.gen.Call
+import mindustry.gen.WorldLabel
 
 fun randomColor(): String{
     return "[${Colors.getColors().keys().toList().random()}]"
@@ -79,4 +80,24 @@ fun Float.buildLineBar(length: Int = 20, max: Float = 20f, color: Pair<Pair<Stri
 
 fun Int.buildLineBar(length: Int = 20, max: Int = 20, color: Pair<Pair<String, String>, String> = Pair(Pair("[yellow]","[green]"), "[red]")): String {
     return toFloat().buildLineBar(length, max.toFloat(), color)
+}
+
+suspend fun worldLabelMessage(x: Float, y: Float, msg: String, time: Long, color: String = "") {
+    val label = WorldLabel.create().apply {
+        set(x, y)
+        fontSize = 6f
+        flags = 2
+        text = buildString {
+            append(color)
+        }
+        snapInterpolation()
+    }
+    label.add()
+    val perCharTime = time / msg.length
+    msg.forEach {
+        label.text += it
+        delay(perCharTime)
+    }
+    delay(time)
+    label.hide()
 }

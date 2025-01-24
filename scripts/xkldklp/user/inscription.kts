@@ -3,6 +3,7 @@
 @file:Depends("inscription/effect")
 @file:Depends("inscription/prefix")
 @file:Depends("wayzer/maps", "获取地图信息")
+@file:Depends("coreLibrary/DBApi", "数据库服务")
 
 package xkldklp.user
 
@@ -110,19 +111,23 @@ command("inscriptionMenu", "释放铭能") {
                                         if (Vars.state.rules.pvp) {
                                             prefix(it)?.pvpActive(player!!,
                                                 level(profile.totalExp),
-                                                prefix(it)?.rate ?: 1f)
+                                                prefix(it)?.rate ?: 1f,
+                                                it.id)
                                             if (map == MapManager.current.randomId)
                                                 effect(it)?.pvpActive(player!!,
                                                     level(profile.totalExp),
-                                                    prefix(it)?.rate ?: 1f)
+                                                    prefix(it)?.rate ?: 1f,
+                                                    it.id)
                                         } else {
                                             prefix(it)?.active(player!!,
                                                 level(profile.totalExp),
-                                                prefix(it)?.rate ?: 1f)
+                                                prefix(it)?.rate ?: 1f,
+                                                it.id)
                                             if (map == MapManager.current.randomId)
                                                 effect(it)?.active(player!!,
                                                     level(profile.totalExp),
-                                                    prefix(it)?.rate ?: 1f)
+                                                    prefix(it)?.rate ?: 1f,
+                                                    it.id)
                                         }
                                     } else {
                                         player!!.sendMessage("[red]已使用过了！")

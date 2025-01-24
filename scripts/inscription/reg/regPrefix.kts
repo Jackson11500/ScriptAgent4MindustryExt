@@ -2,9 +2,11 @@
 @file:Depends("xkldklp/inscription/prefixes/normal")
 @file:Depends("xkldklp/inscription/prefixes/extraEffect")
 @file:Depends("xkldklp/inscription/prefixes/dynamic")
+@file:Depends("xkldklp/inscription/prefixes/inscriptionOP")
 @file:Depends("coreLibrary/DBApi", "数据库服务")
 @file:Depends("wayzer")
 @file:Depends("wayzer/user/ban")
+@file:Depends("xkldklp/user/inscription")
 
 package inscription.reg
 
@@ -23,11 +25,15 @@ import wayzer.user.PlayerBan
 import xkldklp.inscription.prefixes.Dynamic.*
 import xkldklp.inscription.prefixes.ExtraEffect.*
 import xkldklp.inscription.prefixes.Normal.*
+import xkldklp.inscription.prefixes.InscriptionOP.*
 import java.time.Duration
 import java.util.*
 import kotlin.math.floor
 import kotlin.math.pow
 import kotlin.random.Random
+import xkldklp.user.Inscription
+
+val inscription = contextScript<Inscription>()
 
 fun build() {
     val prefix = buildList {
@@ -130,21 +136,23 @@ fun build() {
         ) {
             rate = Random.nextInt(-50, 200) / 100f
         })
-        add(DynamicPrefix(
-            "闪耀",
-            "属性提升40%",
+        add(ExtraEffectPrefix(
+            "专注",
+            "属性提升40%，操控的单位无法移动20秒",
             11,
-            0
+            1.4f,
+            20
         ) {
-            rate = 1.4f
+           first.unit().apply(StatusEffects.unmoving, 20 * 60f)
         })
-        add(DynamicPrefix(
-            "闪耀",
-            "属性提升40%",
+        add(ExtraEffectPrefix(
+            "融毁",
+            "属性提升40%，操控的单位融化30秒",
             12,
-            0
+            1.4f,
+            20
         ) {
-            rate = 1.4f
+            first.unit().apply(StatusEffects.melting, 20 * 60f)
         })
         add(ExtraEffectPrefix(
             "星芒",
@@ -162,16 +170,16 @@ fun build() {
         })
         add(ExtraEffectPrefix(
             "磁场",
-            "属性提升20%,发射一枚延迟爆炸的龙王炮弹",
+            "属性降低20%,发射一枚延迟爆炸的龙王炮弹",
             14,
-            1.2f,
+            0.8f,
             30
         ) {
             Call.createBullet(UnitTypes.navanax.weapons[4].bullet, first.team(), first.x, first.y, 360 * Random.nextFloat(), UnitTypes.navanax.weapons[4].bullet.damage, 0f, 2f)
         })
         add(DynamicPrefix(
             "独狼",
-            "属性提升400%,每有一名其他玩家降低50%,最低50%",
+            "属性提升400%,每有一名其他玩家降低50%,最低-50%",
             15,
             30
         ) {
@@ -187,9 +195,9 @@ fun build() {
         })
         add(ExtraEffectPrefix(
             "蓄力",
-            "属性提升30%,技能效果延迟20s",
+            "属性提升50%,技能效果延迟20s",
             17,
-            1.3f,
+            1.5f,
             50
         ) {
             delay(20_000)
@@ -211,6 +219,18 @@ fun build() {
             40
         ) {
             first.unit().apply(StatusEffects.fast, 10f * 60f)
+        })
+        add(InscriptionOPPrefix(
+            "无效",
+            "属性降低90%，但有50%概率能再次释放",
+            20,
+            0.1f,
+            20
+        ) {
+            if (Random.nextBoolean()) {
+                inscription.used[second.second]=false
+                Call.label("[green]无效化！", 2f, first.x, first.y)
+            }
         })
     }
 

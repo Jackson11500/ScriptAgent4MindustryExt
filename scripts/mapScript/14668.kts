@@ -441,7 +441,7 @@ class CityTypes constructor(
     val WarEconomic: CityType = CityType("[goldenrod]军工经济城市", 1.3f, 0.25f, 0.95f, 1f, 2.9f),
     val LogisticsEconomic: CityType = CityType("[olive]补给经济城市", 1.3f, 2f, 1.25f, 1f, 2.1f),
     val WarLogistics: CityType = CityType("[tan]军工补给城市", 0.45f, 2f, 0.95f, 1f, 2.4f),
-    val WarLogisticsEconomic: CityType = CityType("[cyan]军工补给经济城市", 1.5f, 3f, 0.9f, 1f, 5.2f),
+    val WarLogisticsEconomic: CityType = CityType("[cyan]全能城市", 1.5f, 3f, 0.9f, 1f, 5.2f),
     val ResearchI: CityType = CityType("[sky]科研城市", 0.75f, 0.75f, 1.15f, 3f, 0.4f),
     val ResearchII: CityType = CityType("[sky]科研中心", 0.5f, 0.5f, 1.25f, 8f, 1.2f),
     val ResearchIII: CityType = CityType("[sky]科研基地", 0.25f, 0.25f, 1.5f, 14f, 3.2f),

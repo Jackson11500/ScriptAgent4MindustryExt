@@ -6,6 +6,7 @@ import coreLibrary.lib.with
 import coreMindustry.lib.command
 import coreMindustry.lib.player
 import coreMindustry.util.polyBuild
+import coreMindustry.util.worldLabelMessage
 import mindustry.Vars
 import mindustry.Vars.content
 import mindustry.content.StatusEffects
@@ -73,5 +74,17 @@ command("polyBuild", "poly!") {
 
         val base64 = Vars.dataDirectory.child("scripts").child("main").child("schematic.txt").file().readText()
         polyBuild(player.x, player.y, base64, player.team(), arg.getOrNull(0)?.toIntOrNull() ?: 1)
+    }
+}
+
+command("wlm", "WorldLabel渐入信息") {
+    permission = "fun"
+    usage = "[time(s)] [msg]"
+    body {
+        val player = player!!
+        if (player.dead()) returnReply("[red]你已死亡".with())
+        val time = arg.getOrNull(0)?.toIntOrNull()?.times(1000) ?: returnReply("[red]非法时间".with())
+        val msg = arg.subList(1, arg.size).joinToString("\n")
+        worldLabelMessage(player.x, player.y, msg, time.toLong())
     }
 }

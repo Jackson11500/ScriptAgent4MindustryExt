@@ -426,7 +426,7 @@ fun build() {
         })
         add(UnitEffect(
             "双子",
-            "使用铭能刻印出指定机械克隆体[lightgray]那闪耀却暗淡无光的双子星..\n[yellow]控制的单位将会分裂出50%最大生命的同类单位\n若双方距离大于32格(-1%/共鸣等级,词缀反向增幅,最小6格)将会获得debuff\n若任何一个死亡,另一个会有90%概率一同死亡,10%概率获得全正面buff并翻倍最大生命",
+            "使用铭能刻印出指定机械克隆体[lightgray]那闪耀的双子星..\n[yellow]控制的单位将会分裂出50%最大生命的同类单位\n若双方距离大于32格(-1%/共鸣等级,词缀反向增幅,最小6格)将会获得debuff\n若任何一个死亡,另一个会有90%概率一同死亡,10%概率获得全正面buff并翻倍最大生命",
             23,
             15,
             0.01f
@@ -553,7 +553,7 @@ fun build() {
         })
         add(UnitEffect(
             "献祭",
-            "[cyan]使用大量铭能干扰机械构成\n[yellow]控制的单位死亡,但有30%(+1%/共鸣等级)概率生成5个相同单位",
+            "[cyan]使用大量铭能重构机械\n[yellow]控制的单位死亡,但有30%(+1%/共鸣等级)概率生成5个相同单位",
             26,
             50,
             0.01f,
@@ -710,7 +710,7 @@ fun build() {
         })
         add(NormalEffect(
             "熄火",
-            "[cyan]投放大量铭能熄灭火焰\n[yellow]熄灭全场所有火焰并在下5s(+20%/共鸣等级)持续熄灭火焰",
+            "[cyan]投放大量铭能熄灭火焰\n[yellow]熄灭全场所有火焰并在下20s(+20%/共鸣等级)持续熄灭火焰",
             35,
             60,
             0.2f,
@@ -720,7 +720,7 @@ fun build() {
                     it.remove()
                 }
                 val startTime = Time.millis()
-                while (Time.millis() <= startTime + (5_000 * second).toLong()) {
+                while (Time.millis() <= startTime + (20_000 * second).toLong()) {
                     Groups.fire.forEach {
                         it.remove()
                     }
@@ -772,7 +772,7 @@ fun build() {
         })
         add(NormalEffect(
             "弹幕",
-            "[cyan]将铭能凝聚为大量子弹\n[yellow]向控制的单位前方发射20(+10%/共鸣等级)发随机弹幕",
+            "[cyan]将铭能凝聚为大量子弹\n[yellow]向控制的单位前方发射16(+10%/共鸣等级)发随机弹幕",
             38,
             20,
             0.2f,
@@ -808,7 +808,7 @@ fun build() {
                     UnitTypes.tecta.weapons[0].bullet,
                     UnitTypes.collaris.weapons[0].bullet,
                 )
-                repeat((20 * second).toInt()) {
+                repeat((16 * second).toInt()) {
                     unit.apply {
                         if (dead || !isValid) return@launch
                         val bullet = bullets.random()

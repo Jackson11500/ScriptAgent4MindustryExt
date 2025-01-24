@@ -2,6 +2,7 @@ package xkldklp.inscription.effects
 
 import mindustry.gen.Player
 import inscription.Effect
+import org.jetbrains.exposed.dao.id.EntityID
 
 class UnitSpawnEffect(
     name: String,
@@ -13,7 +14,7 @@ class UnitSpawnEffect(
     val effect: Pair<Player, Float>.() -> Unit,
 ): Effect.BaseEffect(name, desc, id, "单位生成", weight) {
 
-    override suspend fun active(player: Player, level: Int, rate: Float) {
+    override suspend fun active(player: Player, level: Int, rate: Float, iid: EntityID<Int>) {
         effect.invoke(player to rate * (1 + level * levelRate))
     }
 }

@@ -1,6 +1,9 @@
+@file:Depends("coreLibrary/DBApi", "数据库服务")
+
 package inscription
 
 import mindustry.gen.Player
+import org.jetbrains.exposed.dao.id.EntityID
 import kotlin.random.Random
 
 open class BasePrefix(
@@ -12,9 +15,9 @@ open class BasePrefix(
     val type: String = "",
     val weight: Int = 100,
 ) {
-    open suspend fun active(player: Player, level: Int, rate: Float = 1f) { }
+    open suspend fun active(player: Player, level: Int, rate: Float = 1f, iid: EntityID<Int>) { }
 
-    open suspend fun pvpActive(player: Player, level: Int, rate: Float = 1f) { active(player, level, rate) }
+    open suspend fun pvpActive(player: Player, level: Int, rate: Float = 1f, iid: EntityID<Int>) { active(player, level, rate, iid) }
 }
 
 val prefixes = mutableMapOf<Int, BasePrefix>()
@@ -27,4 +30,9 @@ fun randomPrefix(): BasePrefix {
         leftPrefixes.removeFirst()
     }
     return leftPrefixes.first()
+}
+
+fun getPrefixChance(prefix: BasePrefix): Float {
+    val weights = prefixes.values.sumOf { it.weight } + 1
+    return prefix.weight / weights.toFloat() * 100f
 }
