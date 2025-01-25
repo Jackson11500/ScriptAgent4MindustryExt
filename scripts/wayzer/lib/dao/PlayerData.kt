@@ -47,7 +47,9 @@ class PlayerData(id: EntityID<String>) : Entity<String>(id) {
             }
             profile?.onJoin(player)
         } else {
-            unbind()
+            TransactionHelper.lateUpdate {
+                unbind()
+            }
             player.sendMessage("[red]检测到账号不安全,请重新绑定进行验证".with())
         }
     }

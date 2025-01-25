@@ -4,6 +4,7 @@ package main
 
 import coreLibrary.lib.with
 import coreMindustry.lib.command
+import coreMindustry.lib.listen
 import coreMindustry.lib.player
 import coreMindustry.util.polyBuild
 import coreMindustry.util.worldLabelMessage
@@ -12,7 +13,13 @@ import mindustry.Vars.content
 import mindustry.content.StatusEffects
 import mindustry.ctype.ContentType
 import mindustry.entities.units.StatusEntry
+import mindustry.game.EventType
+import mindustry.gen.Call
+import mindustry.gen.SoundCallPacket
+import mindustry.gen.Sounds
 import mindustry.type.StatusEffect
+import mindustry.type.UnitType
+import mindustryX.events.SendPacketEvent
 
 
 command("imFire", "爷是火!!") {
@@ -88,3 +95,28 @@ command("wlm", "WorldLabel渐入信息") {
         worldLabelMessage(player.x, player.y, msg, time.toLong())
     }
 }
+
+/*
+command("sound", "播放声音") {
+    permission = "fun"
+    usage = "[sound] [volume] [pitch] [pan]"
+    body {
+        val player = player!!
+        if (player.dead()) returnReply("[red]你已死亡".with())
+        val a = Sounds.getSound(arg[0].toIntOrNull() ?: returnReply("[red]数值不合法".with()))
+        val b = arg[1].toFloatOrNull() ?: returnReply("[red]数值不合法".with())
+        val c = arg[2].toFloatOrNull() ?: returnReply("[red]数值不合法".with())
+        val d = arg[3].toFloatOrNull() ?: returnReply("[red]数值不合法".with())
+        Call.sound(a, b, c, d)
+    }
+}
+
+listen<SendPacketEvent> {
+    if (it.packet is SoundCallPacket) {
+        val p = it.packet as SoundCallPacket
+        Sounds.press
+        val sound = (it.packet as SoundCallPacket).sound
+        Call.sendMessage("${Sounds.getSoundId(sound)},${(it.packet as SoundCallPacket).pitch}")
+    }
+}
+*/

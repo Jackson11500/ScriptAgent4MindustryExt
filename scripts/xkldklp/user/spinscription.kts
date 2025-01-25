@@ -1,37 +1,44 @@
 @file:Depends("wayzer/user/userService")
+@file:Depends("inscription/special")
 @file:Depends("coreLibrary/DBApi", "数据库服务")
 
 package xkldklp.user
 
 import coreLibrary.DBApi.DB.registerTable
+import coreLibrary.lib.event.RequestPermissionEvent
 import coreLibrary.lib.with
-import coreMindustry.MenuBuilder
 import coreMindustry.lib.*
-import inscription.Effect
-import inscription.Prefix
-import mindustry.Vars
-import mindustry.game.EventType
-import org.jetbrains.exposed.dao.id.EntityID
+import mindustry.gen.Player
 import org.jetbrains.exposed.sql.transactions.transaction
-import wayzer.MapManager
 import wayzer.lib.dao.PlayerData
 import wayzer.lib.dao.PlayerProfile
 import wayzer.user.UserService
-import kotlin.math.floor
-import kotlin.math.max
-import kotlin.math.sqrt
+import inscription.Special
+import mindustry.gen.Call
 
 val userService = contextScript<UserService>()
-
+val special = contextScript<Special>()
 registerTable(SpInscriptionEntity.T)
 
 /** Should call in [Dispatchers.IO] */
 fun newSpInscription(profile: PlayerProfile, id: Int): SpInscriptionEntity {
     return transaction {
-        SpInscriptionEntity.new(profile.id, id)
+        val enable = SpInscriptionEntity.wrapRows(SpInscriptionEntity.playerEnable(profile.id))
+        val b = enable.any {
+            it.iId == id
+        }
+        if (b) {
+            enable.first { it.iId == id }
+        } else {
+            SpInscriptionEntity.new(profile.id, id)
+        }
     }
 }
 export(::newSpInscription)
+
+fun special(id: Int): Special.SpecialInscription {
+    return special.specials[id]!!
+}
 
 command("spinscription", "管理指令: 铭刻特殊星铭") {
     usage = "<account> <ID>"
@@ -41,10 +48,46 @@ command("spinscription", "管理指令: 铭刻特殊星铭") {
         val profile = arg[0].toLongOrNull()?.let {
             PlayerProfile.findByAccount(it)
         } ?: returnReply("[red]找不到该用户".with())
-        val id = effects.getOrDefault(arg[1].toInt(), null) ?: returnReply("[red]未知ID".with())
+        val id = special.specials.getOrDefault(arg[1].toInt(), null)?.id ?: returnReply("[red]未知ID".with())
         withContext(Dispatchers.IO) {
             newSpInscription(profile, id)
         }
         reply("[green]添加成功".with())
     }
 }
+
+command("sptest", "测试") {
+    permission = "fun"
+    body {
+        val profile = PlayerData[player!!.uuid()].profile
+        launch(Dispatchers.IO) {
+            if (player!!.hasPermission("xkldklp.12f")) {
+                Call.sendMessage("f")
+            }
+            if (player!!.hasPermission("xkldklp.12t")) {
+                Call.sendMessage("t")
+            }
+        }
+    }
+}
+
+listenTo<RequestPermissionEvent> {
+    val profile = when (val p = subject) {
+        is PlayerProfile -> p
+        is Player -> PlayerData[p.uuid()].secureProfile(p) ?: return@listenTo
+        else -> return@listenTo
+    }
+    val index = group.indexOfLast { !it.startsWith("@") }
+    val newGroup = group.toMutableList()
+    val sp = buildMap {
+        transaction {
+            val enable = SpInscriptionEntity.wrapRows(SpInscriptionEntity.playerEnable(profile.id))
+            enable.forEach {
+                put(it.iId, it.reversed)
+            }
+        }
+    }
+    newGroup.addAll(index + 1, (sp).map { "@sp${it.key}${it.value}" })
+    group = newGroup
+}
+

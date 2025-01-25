@@ -3,13 +3,17 @@
 
 package wayzer.ext
 
+import arc.Core
 import arc.Events
 import arc.util.Time
+import coreLibrary.lib.PermissionApi
 import coreLibrary.lib.PlaceHold
 import coreLibrary.lib.with
 import coreMindustry.lib.broadcast
 import coreMindustry.lib.game
+import coreMindustry.lib.hasPermission
 import coreMindustry.lib.player
+import mindustry.Vars.logic
 import mindustry.Vars.state
 import mindustry.game.EventType
 import mindustry.game.Team

@@ -1,5 +1,6 @@
 @file:Import("@coreMindustry/util/tools.kt", sourceFile = true)
 @file:Depends("xkldklp/user/inscription")
+@file:Depends("xkldklp/user/spinscription")
 @file:Depends("wayzer/user/achievement", "成就")
 package mapScript
 
@@ -8,8 +9,6 @@ import coreMindustry.lib.game
 import arc.graphics.Color
 import arc.math.geom.Vec2
 import arc.util.Time
-import coreLibrary.lib.util.loop
-import coreMindustry.lib.game
 import coreMindustry.lib.listen
 import coreMindustry.util.buildLineBar
 import coreMindustry.util.getRomanNum
@@ -36,10 +35,12 @@ import mindustry.world.blocks.storage.CoreBlock
 import wayzer.MapManager
 import wayzer.lib.dao.PlayerData
 import xkldklp.user.Inscription
+import xkldklp.user.Spinscription
 import kotlin.random.Random
 
 val achievement = contextScript<wayzer.user.Achievement>()
 val inscription = contextScript<Inscription>()
+val spinscription = contextScript<Spinscription>()
 val ts = contextScript<_100002>()
 
 val msch_coreMiner = "bXNjaAF4nDWV2XIbRRiFWyPNIsnSSKN9Hy9JvMkmgTfgMSguFEsQVcmSka1QvB0U17wKFBdcUCkQ/+kvlDL+Mn3O6f67p6fHfeVeFV1pu3hcucJbV12unh/266eX9W7rnIs2i/erzbMLvvm24tKH3X41/2532C4XXg8/Lg6bF9d62iyeXxbb9eFx/rDbflz9tNu76ns1zpf79Wbjapv1D4f1cr7fHV5Wexeba3lYv7jK0+7H1X6+3S1XLn1cPXywTh4Wm/nT4fHJ1d/v18vvV/P/zdHzbq+0K3xtl/3sX+BCZ39KdgVCEZRAKIRoIVqIFqJFaBFahBahxWgxWowWoyVoCVqClqCV0cpoZbQyWgWtglZBq6BV0apoVbSqtKI7sZ81VF3qrKHqGq4YWJMPnBA4IXCiQGhogKacNZw1nDWcNZw1s3hkctZx1nHWcdbljAxpUvCrE9r/M6XqrqVUSiollZJKmVaq1RVikIAyqIAqOAE1YEUUbRoNzTy1gay/1LWlNRivwXgNxmtoQUJDG3TkbOJs4mzibOJsmsWjK2eGM8OZ4cxwZmbx6MnZwtnC2cLZkrNoY7dVbsucVm7L9RVoE2gTaBNo03XbLB4DOTs4Ozg7ODs4O2bxGMrZxdnF2cXZlTMy9BIN3zVrIIyU6JHokeiR6CkhdJ219+1n7T0LWLznxsr1yfXJ9cn1yfWVCw1jDdR3EwUGBAYEBgQGBAYEBuYMhKkCQwJDAkMCQwJDAkNzBsJMgRGBEYERgRGBkQUKQg/0FR9ZLhByxcfEx8THxMfExwTG5gyEUwUmBCYEJgQmBCYEJuYMhDMFpgSmBKYEpgSmBKbmDIRzBWYEZgRmBGYEZrwQM70QQgoaoAky0AJt0AFd0AP2ICPDIAmOfx+POj/tmlkZQWy40HGaU01ONTnV5DqDBF9NTjU51eRUk1NNTjU51eRUk1NNTjU51eSqJjacq+tThj1l2FOGPbXDwWv+cDjVdgy0dKAISqAi5xmnyRnOc5znOM9xnutrIEQgBgkogwrwvVzQywW9XOhDI4QgAjFIQBn09UJeaLVd8fjp+MmpxFfqLjFk8fH47192/epb/VivJRbdG50kuvP7+DXaG2mRIbOTuHT8x6nJK5d0eem7NMH5gS4RrxCvXKLx/rTrN5vClT0mJ9F7rpnitU3Rjt0b7YvI7pKk6ELrT1/Rgv8Y3miZBf8tutbBqZgv85q+btRXyZDJcqN9INg+SAwdFfGHXT87Wf3reqPjKXC3FHrrC/08C922Ffndrl+cTB1FbnUGSuzFsnl/bLd9TWpOBXNL25OYu5qfjtoz5La6mOvAjQ09Nd6xAneswL1WILS7RE/jnr11Z5u/INRBChqgCTLQAm0Veecn/XlCsd36Q+1efceGju6+0F3JvXX+7H5nV0GIQAwSnRnvtLmECqjqHfpS9QoRiEECyqAC7I36D17VrSQ="
@@ -895,7 +896,13 @@ onEnable {
         Call.sendMessage(name + "结束了...<律令>和<畸变>再也没有足够的铭能刻印单位了..")
         delay(4_000L)
         if (MapManager.current.id <= 1000) {
-            achieveAll("[yellow][始与终-异世天灾]", 8000)
+            Groups.player.forEach {
+                ts.launch(Dispatchers.IO) a@{
+                    val profile = PlayerData[it.uuid()].profile ?: return@a
+                    achievement.finishAchievement(profile, "[yellow][始与终-异世天灾]", 8000)
+                    spinscription.newSpInscription(profile, 12)
+                }
+            }
         } else {
             Call.sendMessage("...你说得对，但是为什么MapManager.current.id是大于1000的？奖励没收！")
         }

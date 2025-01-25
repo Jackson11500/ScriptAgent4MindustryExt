@@ -5,6 +5,7 @@
 @file:Depends("wayzer/user/achievement", "成就")
 @file:Depends("xkldklp/KVars")
 @file:Depends("xkldklp/user/inscription")
+@file:Depends("xkldklp/user/spinscription")
 @file:Depends("xkldklp/user/sign")
 @file:Depends("xkldklp/user/achieveStatistics")
 @file:Depends("inscription/effect")
@@ -52,7 +53,9 @@ import wayzer.lib.dao.PlayerProfile
 import wayzer.user.AchievementEntity
 import wayzer.user.UserService
 import xkldklp.user.InscriptionEntity
+import xkldklp.user.Spinscription
 import xkldklp.user.SignEntity
+import xkldklp.user.SpInscriptionEntity
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -61,6 +64,7 @@ val userService = contextScript<UserService>()
 val prefix = contextScript<Prefix>()
 val effect = contextScript<Effect>()
 val inscription = contextScript<xkldklp.user.Inscription>()
+val spinscription = contextScript<Spinscription>()
 val achieveStatistics = contextScript<xkldklp.user.AchieveStatistics>()
 val textInput = contextScript<coreMindustry.UtilTextInput>()
 val achievement = contextScript<wayzer.user.Achievement>()
@@ -702,6 +706,8 @@ class InscriptionMenu(private val player: Player): MenuBuilder<Unit>() {
     private lateinit var inscriptionInIt: List<InscriptionEntity>
     private lateinit var inscriptions: SizedIterable<InscriptionEntity>
     private lateinit var showInscriptionEntity: InscriptionEntity
+    private lateinit var spinscriptions: SizedIterable<SpInscriptionEntity>
+    private lateinit var showSpInscriptionEntity: SpInscriptionEntity
 
     fun sendTo() {
         launch(Dispatchers.IO) {
@@ -721,6 +727,20 @@ class InscriptionMenu(private val player: Player): MenuBuilder<Unit>() {
                 refresh()
             } else {
                 tab = 4; refresh()
+            }
+        }
+        option("管理特殊星铭") {
+            if (profile == null) {
+                refresh()
+            } else {
+                transaction {
+                    spinscriptions = SpInscriptionEntity.wrapRows(SpInscriptionEntity.player(profile.id))
+                    if (spinscriptions.empty()) {
+                        player.sendMessage("[red]你还没有特殊星铭!"); refresh()
+                    } else {
+                        tab = 7; refresh()
+                    }
+                }
             }
         }
     }
@@ -932,6 +952,52 @@ class InscriptionMenu(private val player: Player): MenuBuilder<Unit>() {
         }
     }
 
+    private suspend fun spmanagerMenu() {
+        title = "[cyan]铭刻-特殊星铭"
+        msg = ""
+        transaction {
+            spinscriptions = SpInscriptionEntity.wrapRows(SpInscriptionEntity.player(profile!!.id))
+            spinscriptions.forEach {
+                val sp = spinscription.special(it.iId)
+                option(if (it.reversed) "[yellow]${sp.nameR}" else "[cyan]${sp.name}") {
+                    showSpInscriptionEntity = it
+                    tab = 8; refresh()
+                }
+
+                option(if (it.enable) "[green]开启" else "[red]关闭") {
+                    transaction {
+                        it.enable = !it.enable;
+                    }
+                    refresh()
+                }
+                option("[blue]翻转") {
+                    transaction {
+                        it.reversed = !it.reversed
+                    }
+                    refresh()
+                }
+                newRow()
+            }
+            option("返回") {
+                tab = 0; refresh()
+            }
+        }
+    }
+    private suspend fun spinfoMenu() {
+        transaction {
+            val spe = showSpInscriptionEntity
+            val sp = spinscription.special(spe.iId)
+            val r = spe.reversed
+            title = if (r) sp.nameR else sp.name
+            msg = buildString {
+                appendLine(if (r) sp.nameR else sp.name)
+                append(if (r) sp.descR else sp.desc)
+            }
+            option("返回") {
+                tab = 7; refresh()
+            }
+        }
+    }
     override suspend fun build() {
         if (followup && frame >= targetFrame) {
             Call.hideFollowUpMenu(_menuId)
@@ -947,6 +1013,8 @@ class InscriptionMenu(private val player: Player): MenuBuilder<Unit>() {
             4 -> managerMenu()
             5 -> typeMenu()
             6 -> infoMenu()
+            7 -> spmanagerMenu()
+            8 -> spinfoMenu()
         }
         if (!followup) {
             newRow()
