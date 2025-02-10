@@ -91,7 +91,6 @@ fun getCoreTile(core: CoreBlock): Tile? {
 }
 
 val waveUnits by autoInit { mutableMapOf<UnitType, Int>() }
-val preWaveUnits by autoInit { mutableMapOf<UnitType, Int>() }
 var waveTime = 120_000L
 
 fun spawnFromSide(unit: UnitType): mindustry.gen.Unit {
@@ -743,7 +742,7 @@ onEnable {
                 delay(10_000L)
             }
         }
-        loop(Dispatchers.game) {
+        launch(Dispatchers.game) {
             delay(600_000)
             Call.sendMessage(name + "<律令>已经熟悉了观星台的环境..它的铭能增长加快了")
             chargeScl += 1f
@@ -787,15 +786,12 @@ onEnable {
             waveUnits[UnitTypes.scepter] = 4
             waveUnits[UnitTypes.reign] = 1
             while (true) {
-                waveUnits.putAll(preWaveUnits)
-                preWaveUnits.clear()
                 waveUnits.forEach {
                     repeat(it.value) { i ->
                         ts.launch(Dispatchers.game) { spawnFromSide(it.key) }
                         delay(50L)
                     }
                 }
-
                 delay(waveTime)
             }
         }
@@ -872,14 +868,14 @@ onEnable {
             ts.launch(Dispatchers.game) {
                 delay(2_000L)
                 Call.sendMessage("[red]检测到终焉铭能出现...确认来自<终焉第十二铭-扭曲畸变>")
-                ts.launch(Dispatchers.game) {
+                launch(Dispatchers.game) {
                     val tile = Vars.world.tiles.filter { it.floor() == Blocks.cryofluid }.sortedBy { Random.nextFloat() }
                     tile.forEach {
                         it.setFloorNet(Blocks.slag)
                         delay(50)
                     }
                 }
-                preWaveUnits[UnitTypes.latum] = 1
+                waveUnits[UnitTypes.latum] = 1
                 Vars.state.rules.apply {
                     ambientLight = Color(1f, 0f, 0f, 0.4f)
                 }
@@ -901,7 +897,7 @@ onEnable {
                 apply(StatusEffects.slow, Float.POSITIVE_INFINITY)
             }
         }
-        preWaveUnits[UnitTypes.conquer] = 2
+        waveUnits[UnitTypes.conquer] = 2
         delay(5_000L)
         Call.sendMessage(name + "总之，事态已经超出控制了，我们必须全力以赴!")
         delay(5_000L)
@@ -1013,15 +1009,17 @@ onEnable {
             if (defStartTime + 300_000L <= Time.millis() && triggerNum <= 0) {
                 triggerNum += 1
                 Call.sendMessage(name + "侦测到更多陆军准备登陆!")
-                preWaveUnits[UnitTypes.vela] = 3
-                preWaveUnits[UnitTypes.vanquish] = 6
+                waveUnits[UnitTypes.vela] = 3
+                waveUnits[UnitTypes.corvus] = 1
+                waveUnits[UnitTypes.vanquish] = 6
                 waveTime -= 15_000L
             }
             if (defStartTime + 600_000L <= Time.millis() && triggerNum <= 1) {
                 triggerNum += 1
                 Call.sendMessage(name + "侦测到更多陆军准备登陆!")
-                preWaveUnits[UnitTypes.vela] = 6
-                preWaveUnits[UnitTypes.reign] = 4
+                waveUnits[UnitTypes.vela] = 4
+                waveUnits[UnitTypes.corvus] = 2
+                waveUnits[UnitTypes.reign] = 2
                 waveTime -= 15_000L
             }
             if (defStartTime + 900_000L <= Time.millis() && triggerNum <= 2) {

@@ -567,7 +567,6 @@ listen<EventType.UnitBulletDestroyEvent> {
     }
 }
 
-/*
 command("join", "加入别人的坦克小队") {
     type = CommandType.Client
     aliases = listOf("加入")
@@ -593,8 +592,6 @@ command("join", "加入别人的坦克小队") {
         }
     }
 }
-
- */
 
 suspend fun Player.shopMenu(){
     menu.sendMenuBuilder<kotlin.Unit>(

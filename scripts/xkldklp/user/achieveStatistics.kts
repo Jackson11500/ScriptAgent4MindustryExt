@@ -69,7 +69,7 @@ val name2desc = mapOf(
     "[purple][异世-冲击区]" to "通关异世天灾-冲击区0078",
     "[purple][异世-裂谷道]" to "通关异世天灾-荒芜裂谷",
     "[purple][异世-发射区]" to "通关异世天灾-行星际发射终端",
-    "[yellow][始与终-异世天灾]" to "通关异世天灾",
+    "[yellow][始与终-异世天灾]" to "见证星重获第12始源与终焉铭",
     "[purple][跃迁逃脱]" to "在末日启示录中,成功研究出最终科技",
     "[green][逆天改命]" to "在升级模式中升级一只obviate${Iconc.unitObviate}"
 )

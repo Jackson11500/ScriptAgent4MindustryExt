@@ -13,13 +13,18 @@ import coreMindustry.lib.broadcast
 import coreMindustry.lib.game
 import coreMindustry.lib.hasPermission
 import coreMindustry.lib.player
-import mindustry.Vars.logic
-import mindustry.Vars.state
+import mindustry.Vars
+import mindustry.Vars.*
+import mindustry.ctype.ContentType
 import mindustry.game.EventType
 import mindustry.game.Team
+import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Player
+import mindustry.type.UnitType
+import wayzer.MapManager
 import wayzer.VoteService
+import wayzer.lib.dao.PlayerData
 import java.time.Instant
 import kotlin.math.min
 import kotlin.random.Random
@@ -143,6 +148,76 @@ fun VoteService.register() {
     addSubVote("自定义投票", "<内容>", "text", "文本", "t") {
         if (arg.isEmpty()) returnReply("[red]请输入投票内容".with())
         start(player!!, "自定义([green]{text}[])".with("text" to arg.joinToString(" "))) {}
+    }
+    addSubVote("生成单位(畸变)", "[类型ID=列出] [数量=1]", "spawn", "生成", "畸变") {
+        if (MapManager.current.id <= 1000 && MapManager.current.id != 1) returnReply("[red]你无法在这里使用<畸变>的权能".with())
+        if (!player!!.hasPermission("xkldklp.12t")) {
+            returnReply("[red]未拥有权限，请检查是否启用终焉铭<畸变>".with())
+        }
+        val list = content.getBy<UnitType>(ContentType.unit).filterNot { it.internal }
+        val type = arg.getOrNull(0)?.toIntOrNull()?.let { list.getOrNull(it) } ?: returnReply(
+                "[red]请输入类型ID: {list}"
+                        .with("list" to list.mapIndexed { i, type -> "[yellow]$i[green]($type)" }.joinToString())
+        )
+        val team = player!!.team()
+        val unit = player!!.unit()
+        val num = arg.getOrNull(1)?.toIntOrNull() ?: 1
+        start(player!!, "为{team}[]生成([green]{type}[] * {amount})".with(
+                "team" to "[#${team.color}]${team.name}",
+                "type" to type,
+                "amount" to num
+        )) {
+            repeat(num) {
+                type.create(team).apply {
+                    if (unit != null) set(unit.x, unit.y)
+                    else team.data().core()?.let {
+                        set(it.x, it.y)
+                    }
+                    add()
+                }
+            }
+            broadcast("已为{team}[]生成([green]{type}[] * {amount})".with(
+                    "team" to "[#${team.color}]${team.name}",
+                    "type" to type,
+                    "amount" to num
+            ))
+        }
+    }
+    addSubVote("改变规则(律令)", "[类型=列出] [数值]", "rule", "规则", "律令") {
+        if (MapManager.current.id <= 1000 && MapManager.current.id != 1) returnReply("[red]你无法在这里使用<律令>的权能".with())
+        if (!player!!.hasPermission("xkldklp.12f")) {
+            returnReply("[red]未拥有权限，请检查是否启用始源铭<律令>".with())
+        }
+        val ruleList = listOf(
+                "unitBuildSpeed",
+                "unitCost",
+                "unitCrashDamage",
+                "unitDamage",
+                "unitHealth",
+                "buildCost",
+                "blockDamage",
+                "blockHealth",
+                "buildSpeed"
+        )
+        if (!ruleList.contains(arg.firstOrNull())) {
+            returnReply("请输入类型: \n{list}".with("list" to ruleList.joinToString("\n")))
+        } else {
+            val num = arg.getOrNull(1)?.toFloatOrNull() ?: returnReply("[red]请输入数值".with())
+            start(player!!, "修改({rule})为({num})".with("rule" to arg[0], "num" to arg[1])){
+                when(arg[0]) {
+                    "unitBuildSpeed" -> state.rules.unitBuildSpeedMultiplier = num
+                    "unitCost" -> state.rules.unitCostMultiplier = num
+                    "unitCrashDamage" -> state.rules.unitCrashDamageMultiplier = num
+                    "unitDamage" -> state.rules.unitDamageMultiplier = num
+                    "unitHealth" -> state.rules.unitHealthMultiplier = num
+                    "buildCost" -> state.rules.buildCostMultiplier = num
+                    "blockDamage" -> state.rules.blockDamageMultiplier = num
+                    "blockHealth" -> state.rules.blockHealthMultiplier = num
+                    "buildSpeed"  -> state.rules.buildSpeedMultiplier = num
+                }
+                Call.setRules(state.rules)
+            }
+        }
     }
 }
 

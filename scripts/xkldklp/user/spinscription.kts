@@ -15,6 +15,7 @@ import wayzer.lib.dao.PlayerProfile
 import wayzer.user.UserService
 import inscription.Special
 import mindustry.gen.Call
+import mindustry.gen.Groups
 
 val userService = contextScript<UserService>()
 val special = contextScript<Special>()
@@ -34,6 +35,7 @@ fun newSpInscription(profile: PlayerProfile, id: Int): SpInscriptionEntity {
         }
     }
 }
+
 export(::newSpInscription)
 
 fun special(id: Int): Special.SpecialInscription {
@@ -45,14 +47,25 @@ command("spinscription", "管理指令: 铭刻特殊星铭") {
     permission = "xkldklp.user.newInscription"
     body {
         if (arg.size < 2) replyUsage()
-        val profile = arg[0].toLongOrNull()?.let {
-            PlayerProfile.findByAccount(it)
-        } ?: returnReply("[red]找不到该用户".with())
-        val id = special.specials.getOrDefault(arg[1].toInt(), null)?.id ?: returnReply("[red]未知ID".with())
-        withContext(Dispatchers.IO) {
-            newSpInscription(profile, id)
+        if (arg[0] == "all") {
+            val id = special.specials.getOrDefault(arg[1].toInt(), null)?.id ?: returnReply("[red]未知ID".with())
+            Groups.player.forEach {
+                val profile = PlayerData[it.uuid()].profile ?: return@forEach
+                withContext(Dispatchers.IO) {
+                    newSpInscription(profile, id)
+                }
+            }
+            reply("[green]添加成功".with())
+        } else {
+            val profile = arg[0].toLongOrNull()?.let {
+                PlayerProfile.findByAccount(it)
+            } ?: returnReply("[red]找不到该用户".with())
+            val id = special.specials.getOrDefault(arg[1].toInt(), null)?.id ?: returnReply("[red]未知ID".with())
+            withContext(Dispatchers.IO) {
+                newSpInscription(profile, id)
+            }
+            reply("[green]添加成功".with())
         }
-        reply("[green]添加成功".with())
     }
 }
 

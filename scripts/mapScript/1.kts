@@ -70,7 +70,8 @@ val textInput = contextScript<coreMindustry.UtilTextInput>()
 val achievement = contextScript<wayzer.user.Achievement>()
 val kVars = contextScript<xkldklp.KVars>()
 
-val localhost = "h1.getmc.cn:33455"
+val localhost = "h1.getmc.cn"
+val port = 33455
 
 fun Player.achievement(name: String, exp: Int, broadcast: Boolean = false) {
     val profile = PlayerData[uuid()].profile
@@ -441,7 +442,7 @@ class AccountMenu(private val player: Player): MenuBuilder<Unit>() {
             }
             userService.finishAchievement(data.profile!!, "[green][绑定账号]", 100, false)
             userService.updateExp(data.profile!!, 0)
-            Call.connect(player.con, localhost, 8840)
+            Call.connect(player.con, localhost, port)
             if (Core.settings.getLong("latestAccount", 0) + 1 == account) {
                 Core.settings.put("latestAccount", account)
             }
@@ -507,7 +508,7 @@ class AccountMenu(private val player: Player): MenuBuilder<Unit>() {
                             transaction {
                                 data.unbind()
                             }
-                            Call.connect(player.con, localhost, 8840)
+                            Call.connect(player.con, localhost, port)
                         }
                     }
                     else

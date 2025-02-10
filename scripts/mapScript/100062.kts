@@ -72,7 +72,7 @@ data class UnitData(
     }
 
     fun levelNeed(l: Int): Float {
-        return unit.type.health
+        return unit.type.health * 3.5f
     }
 }
 
