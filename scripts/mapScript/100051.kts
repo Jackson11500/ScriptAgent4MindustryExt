@@ -2,6 +2,7 @@ package mapScript
 
 import coreMindustry.lib.listen
 import mapScript.lib.modeIntroduce
+import mindustry.ai.types.MissileAI
 import mindustry.content.StatusEffects
 import mindustry.game.EventType
 import mindustry.gen.Iconc
@@ -19,6 +20,7 @@ val units by autoInit { mutableMapOf<mindustry.gen.Unit, Int>() }
 listen<EventType.UnitBulletDestroyEvent> { e ->
     val u = e.unit
     val team = e.bullet.team
+    if (u.controller() is MissileAI) return@listen
     if (u != team && units.getOrDefault(u, 0) <= 1) {
         e.unit.type.spawn(team, e.unit.x, e.unit.y).apply {
             health /= 4

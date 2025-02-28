@@ -46,7 +46,7 @@ fun findScript(id: String): ScriptInfo? {
     return script.takeIf { it.inst != null }
 }
 
-fun loadMapScript(id: String): Boolean {
+fun loadMapScript(id: String, quiet: Boolean = false): Boolean {
     val script = findScript(id)?.scriptInfo
     if (script == null) {
         launch(Dispatchers.gamePost) {
@@ -61,14 +61,16 @@ fun loadMapScript(id: String): Boolean {
     MindustryDispatcher.safeBlocking {
         ScriptManager.enableScript(script, true)
     }
-    launch(Dispatchers.gamePost) {
-        if (script.enabled)
-            broadcast("[yellow]加载地图特定脚本完成: {id}".with("id" to script.id))
-        else
-            broadcast(
-                "[red]地图脚本{id}加载失败，请联系管理员: {reason}"
-                    .with("id" to script.id, "reason" to script.failReason.orEmpty())
-            )
+    if (!quiet) {
+        launch(Dispatchers.gamePost) {
+            if (script.enabled)
+                broadcast("[yellow]加载地图特定脚本完成: {id}".with("id" to script.id))
+            else
+                broadcast(
+                    "[red]地图脚本{id}加载失败，请联系管理员: {reason}"
+                        .with("id" to script.id, "reason" to script.failReason.orEmpty())
+                )
+        }
     }
     return script.enabled
 }
