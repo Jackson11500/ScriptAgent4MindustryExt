@@ -198,7 +198,10 @@ listen<EventType.UnitDamageEvent> { e ->
     }
 }
 listen<EventType.UnitDestroyEvent> {
-    it.unit.data.calculate()
+    launch(Dispatchers.game) {
+        yield()
+        it.unit.data.calculate()
+    }
 }
 listen<EventType.UnitBulletDestroyEvent> {
     if (it.bullet.owner is mindustry.gen.Unit) {
@@ -223,7 +226,10 @@ listen<EventType.BuildDamageEvent> { e ->
     }
 }
 listen<EventType.BlockDestroyEvent> { e ->
-    e.tile.build.data.calculate()
+    launch(Dispatchers.game) {
+        yield()
+        e.tile.build.data.calculate()
+    }
 }
 listen<EventType.BuildingBulletDestroyEvent> { e ->
     val build = e.build
