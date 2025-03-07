@@ -4,15 +4,7 @@ import arc.math.geom.Geometry
 import arc.util.Interval
 import arc.util.Time
 import arc.util.Timer
-import coreLibrary.lib.config
 import mapScript.floodV2.Module
-import mapScript.floodV2.lib.BuildingBinder
-import mapScript.floodV2.lib.BuildingTracker
-import mapScript.floodV2.lib.Emitter
-import mapScript.floodV2.lib.FloodUtil
-import mindustry.Vars.tilesize
-import mindustry.content.Blocks
-import mindustry.content.Items
 import mindustry.gen.Building
 import mindustry.graphics.Pal
 import mindustry.type.Item
@@ -26,41 +18,41 @@ val mainScript = contextScript<Module>()
 
 val map = mapOf(
     Blocks.coreShard to Core(
-        4f, 0.5f,
+        10f, 0.5f,
         maxLayer = 5f,
         upgrade = 20 * 30f to Blocks.coreFoundation,
         nullifyAble = 3000f to 3 * 60f,
     ),
     Blocks.coreFoundation to Core(
-        10f, 0.4f,
+        25f, 0.4f,
         maxLayer = 10f,
         upgrade = 100 * 30f to Blocks.coreNucleus,
         nullifyAble = 6000f to 5 * 60f,
     ),
     Blocks.coreNucleus to Core(
-        20f, 0.2f,
+        40f, 0.2f,
         nullifyAble = 10000f to 6 * 60f,
     ),
     Blocks.reinforcedContainer to Core(
-        3f, 1f,
+        5f, 1f,
         nullifyAble = 1000f to 3 * 60f
     ),
     Blocks.reinforcedVault to Core(
-        7f, 1f,
+        15f, 1f,
         nullifyAble = 2000f to 3 * 60f
     ),
     Blocks.coreBastion to Core(
-        13f, 0.4f,
+        25f, 0.4f,
         nullifyAble = 5000f to 3 * 60f,
         canClear = false,
     ),
     Blocks.coreCitadel to Core(
-        25f, 0.2f,
+        50f, 0.2f,
         nullifyAble = 10000f to 5 * 60f,
         canClear = false,
     ),
     Blocks.coreAcropolis to Core(
-        50f, 0.2f,
+        100f, 0.2f,
         nullifyAble = 15000f to 6 * 60f,
         canClear = false,
     )

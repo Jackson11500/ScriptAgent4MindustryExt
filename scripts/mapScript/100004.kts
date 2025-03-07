@@ -59,6 +59,7 @@ fun Player.achievement(name: String, exp: Int, b: Boolean = false) {
         achievement.finishAchievement(profile, name, exp, b)
 }
 
+
 fun achieveAll(name: String, exp: Int) {
     Groups.player.forEach { it.achievement(name, exp) }
 }
@@ -980,7 +981,7 @@ onEnable {
         Call.sendMessage(name + "由于<星>的能力，始源铭与终焉铭不可能从我与辰处抽取铭能")
         delay(5_000L)
         Call.sendMessage(name + "即使它们同时在场....我们只要耗光他们所有的铭能就可轻易打败他们!")
-        worldLabelMessage(nameRU.x, nameRU.y, "落日理论...", 2, "[yellow]")
+        worldLabelMessage(nameRU.x, nameRU.y, "[yellow]落日理论...", 2)
         delay(5_000L)
         Call.sendMessage(name + "好了，观星台正在计算我们需要守住的时间，我也将刻印一些目前观星台不存在的资源")
         defStartTime = Time.millis() // 守30分钟

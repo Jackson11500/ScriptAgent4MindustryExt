@@ -1,3 +1,4 @@
-@file:Import("mapScript.floodV2.moudule", defaultImport = true)
+@file:Depends("coreMindustry")
+@file:Import("@coreMindustry/util/tools.kt", sourceFile = true)
 
 package xkldklp

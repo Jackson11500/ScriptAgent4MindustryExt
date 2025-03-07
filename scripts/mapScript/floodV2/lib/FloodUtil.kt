@@ -48,10 +48,12 @@ object FloodUtil {
 
     //calculated
     val creeperBlocksSet = creeperBlocks.toSet()
-    fun creepToHealth(creep: Float) = 100 * creep
-    fun creepToHealthInv(health: Float) = (health / 100)
+    val creepRate = 100f
+    fun creepToHealth(creep: Float) = creepRate * creep
+    fun creepToHealthInv(health: Float) = (health / creepRate)
     var healthToBlock = sortedMapOf(*creeperBlocks.map { it.health.toFloat() to it }.toTypedArray())
-    var maxCreep = creepToHealthInv(creeperBlocks.maxOf { it.health - 0.01f })
+    var maxCreep = creepToHealthInv(creeperBlocks.maxOf { it.health - 0.01f }) + 100f
+    var minCreepDraw = creepToHealthInv(creeperBlocks.minOf { it.health - 0.01f })
 
     //data
     @Volatile
@@ -100,7 +102,7 @@ object FloodUtil {
                     terrainMap[tile] = 50f;hinderMap[tile] = 0.5f
                 }
 
-                tile.block() is Cliff -> hinderMap[tile] = 10f
+                tile.block() is Cliff -> hinderMap[tile] = 5f
                 tile.floor() == Blocks.metalFloor5 -> hinderMap[tile] = -1f
                 tile.floor().placeableOn.not() -> terrainMap[tile] = maxCreep
             }
@@ -112,8 +114,8 @@ object FloodUtil {
         enable = true
         launchCreeperDraw()
     }
-
-    private val timer = Interval(3)
+/*
+private val timer = Interval(3)
     fun update() {
         if (enable) {
             Vars.state.teams[creepTeam]?.plans?.clear()
@@ -135,6 +137,35 @@ object FloodUtil {
                 timer.reset(1, 0f)
             }
             if (timer.check(2, 6f)) {
+                val delta = timer.getTime(2)
+                loopUnitDamage(delta)
+                timer.reset(2, 0f)
+            }
+        }
+    }
+* */
+    private val timer = Interval(3)
+    fun update() {
+        if (enable) {
+            Vars.state.teams[creepTeam]?.plans?.clear()
+            Emitter.update()
+            if (!enable) return
+            if (true) {
+                val damaged = Vars.indexer.getDamaged(creepTeam).toList()
+                var damagedDraw = 0
+                Vars.indexer.getDamaged(creepTeam).forEach {
+                    updateCreep(it.tile)
+                    if (creeperDraw(it.tile)) damagedDraw++
+                }
+                statistics["Damaged建筑"] = damaged.size.toString()
+                statistics["Damaged建筑绘制"] = damagedDraw.toString()
+            }
+            if (true) {
+                val delta = timer.getTime(1)
+                statistics["建筑伤害耗时(ms)"] = measureTimeMillis { loopBuildDamage(delta) }.toString()
+                timer.reset(1, 0f)
+            }
+            if (true) {
                 val delta = timer.getTime(2)
                 loopUnitDamage(delta)
                 timer.reset(2, 0f)
@@ -174,7 +205,7 @@ object FloodUtil {
 
     /**@return updated */
     fun creeperDraw(tile: Tile): Boolean {
-        if (creepMap[tile] < 1f || creepMap[tile] > maxCreep || (tile.build?.team ?: creepTeam) != creepTeam) {
+        if (creepMap[tile] < minCreepDraw || creepMap[tile] > maxCreep || (tile.build?.team ?: creepTeam) != creepTeam) {
             healthMap[tile] = 0f
             return false
         }

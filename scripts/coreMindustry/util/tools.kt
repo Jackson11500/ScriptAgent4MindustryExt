@@ -82,21 +82,24 @@ fun Int.buildLineBar(length: Int = 20, max: Int = 20, color: Pair<Pair<String, S
     return toFloat().buildLineBar(length, max.toFloat(), color)
 }
 
-suspend fun worldLabelMessage(x: Float, y: Float, msg: String, time: Long, color: String = "") {
+suspend fun worldLabelMessage(x: Float, y: Float, msg: String, time: Long) {
     val label = WorldLabel.create().apply {
         set(x, y)
         fontSize = 6f
         flags = 2
-        text = buildString {
-            append(color)
-        }
+        text = ""
         snapInterpolation()
     }
     label.add()
     val perCharTime = time / msg.length
+    var skipDelay = false
     msg.forEach {
         label.text += it
-        delay(perCharTime)
+        if (it == '[') { skipDelay = true }
+        if (it == ']') { skipDelay = false }
+        if (!skipDelay) {
+            delay(perCharTime)
+        }
     }
     delay(time)
     label.hide()

@@ -98,20 +98,20 @@ data class Charged(
 
 val map = mapOf(
     Blocks.container to Charged(
-        4f * (1 + 1 / 0.3f), 2f, protectDps = 500f,
+        10f * (1 + 1 / 0.3f), 2f, protectDps = 500f,
         charge = 0.3f to 900f
     ),
     Blocks.vault to Charged(
-        12f * (1 + 1 / 0.3f), 2f, protectDps = 1500f,
+        30f * (1 + 1 / 0.3f), 2f, protectDps = 1500f,
         charge = 0.3f to 900f
     ),
     Blocks.launchPad to Charged(
-        8f * (1 + 1 / 0.3f), 1f, protectDps = 1000f,
+        20f * (1 + 1 / 0.3f), 1f, protectDps = 1000f,
         charge = 0.3f to 900f,
-        upgrade = 60 * 30f to Blocks.interplanetaryAccelerator,
+        upgrade = 20 * 30f to Blocks.interplanetaryAccelerator,
     ),
     Blocks.interplanetaryAccelerator to Charged(
-        24f * (1 + 1 / 0.5f), 2f, protectDps = 2500f,
+        100f * (1 + 1 / 0.5f), 2f, protectDps = 3000f,
         charge = 0.5f to 2400f
     ),
 )

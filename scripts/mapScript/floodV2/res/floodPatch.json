@@ -1,50 +1,59 @@
 {
   "block": {
     "scrap-wall": {
-      "health": 200,
+      "health": 50,
       "solid": false
     },
     "copper-wall": {
-      "health": 500,
+      "health": 150,
       "solid": false
     },
     "titanium-wall": {
-      "health": 1000
+      "health": 400,
+      "solid": false
     },
     "beryllium-wall": {
-      "health": 2000,
+      "health": 750,
+      "solid": false,
       "armor": 0
     },
     "thorium-wall": {
-      "health": 3000
+      "health": 1000,
+      "solid": false
     },
     "tungsten-wall": {
-      "health": 5000,
+      "health": 2000,
+      "solid": false,
       "armor": 0
     },
     "phase-wall": {
-      "health": 7000,
+      "health": 4500,
+      "solid": false,
       "chanceDeflect": 0,
       "flashHit": false
     },
     "plastanium-wall": {
-      "health": 9000,
+      "health": 7500,
+      "solid": false,
       "insulated": false,
       "absorbLasers": false,
       "armor": 2
     },
     "surge-wall": {
-      "health": 11000,
+      "health": 10000,
+      "solid": false,
       "lightningChance": 0,
       "armor": 5
     },
     "reinforced-surge-wall": {
-      "health": 13000,
+      "health": 15000,
+      "solid": false,
       "lightningChance": 0,
       "armor": 10
     },
     "carbide-wall": {
-      "health": 15000,
+      "health": 25000,
+      "solid": false,
       "lightningChance": 0,
       "armor": 20
     },
@@ -55,7 +64,7 @@
       "healPercent": 2.5
     },
     "thorium-reactor": {
-      "health": 2000,
+      "health": 100000,
       "armor": 20
     },
     "impact-reactor": {

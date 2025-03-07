@@ -49,7 +49,7 @@ listen<EventType.PlayEvent> {
         depends("wayzer/map/mapInfo")?.import<(String, String) -> Unit>("addModeIntroduce")
             ?.invoke(
                 "洪水模式 Flood V2", """
-        flood远古版本，平衡性和性能有较大问题。LC对其进行了大量修改。以下为原说明文件
+        flood远古版本，平衡性和性能有较大问题。但进行了大修，平衡和算法和原版存在一定差别。以下为原说明文件
         [scarlet]插件开发 WayZer 数值平衡 LuckyClover,WayZer[]
         具体更新可以参考FLOODV2指导地图（/vote map 14487）
         
