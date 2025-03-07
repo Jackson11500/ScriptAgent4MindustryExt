@@ -623,7 +623,7 @@ class MapMenu(private val player: Player): MenuBuilder<Unit>() {
             refresh()
         }
         newRow()
-        option("[white]星团\n[lightgray]玩法影响等级：星火燎原") {
+        option("[white]星团\n[lightgray]玩法影响等级：星光熠熠") {
             tab = 2
             mapPrefix = "C"
             refresh()

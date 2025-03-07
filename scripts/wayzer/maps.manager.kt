@@ -13,6 +13,7 @@ import coreMindustry.lib.game
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import mindustry.Vars
 import mindustry.core.GameState
 import mindustry.game.EventType
