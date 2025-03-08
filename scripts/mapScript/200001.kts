@@ -31,10 +31,19 @@ import coreMindustry.util.spawnAround
 import mindustry.Vars.state
 import mindustry.Vars.world
 import mindustry.world.blocks.storage.CoreBlock
+import wayzer.lib.dao.PlayerData
 import wayzer.map.BetterTeam
 
 val ts = contextScript<_200001>()
 val betterTeam = contextScript<BetterTeam>()
+val achievement = contextScript<wayzer.user.Achievement>()
+
+fun Player.achievement(name: String, exp: Int, broadcast: Boolean = false) {
+    val profile = PlayerData[uuid()].profile
+    if (profile != null)
+        achievement.finishAchievement(profile, name, exp, broadcast)
+}
+
 
 data class PlayerData(
         var coins: Int = 10000, //当前现金 初始10000
@@ -65,6 +74,9 @@ data class PlayerData(
             lastCoin = coins
             coins += (multipleCoins + extraCoins)
             coins = min(99999999, coins)  //最大值
+            if (coins == 99999999) {
+                player.achievement("[purple][999!]", 999, true)
+            }
             streak++
 
             player.sendMessage("[red]殷紫[grey]:[white]啊嘞？你就这么猫对了？拿去吧，你总共得到了[gold]${(multipleCoins + extraCoins)}[]块钱。希望下回合你能输的更惨呀~")
@@ -698,6 +710,7 @@ onEnable {
                     if (it.value >= 200000) {
                         (it.key).sendMessage("[red]殷紫[grey]:[white]你怎么真的到达了我的指标了啊...不甘心...你赢了...")
                         (it.key).sendMessage("[red]殷紫[grey]:[white]在走之前，我赋予了你能控制爬虫的能力，控制他们炸飞那些一败涂地的Loser吧，哈哈哈！")
+                        it.key.achievement("[green][成功的赌徒]", 100)
                         betterTeam.changeTeam(it.key, Team.green)
                     } else {
                         (it.key).sendMessage("[red]殷紫[grey]:[white]哈哈！你并没达成我的目标！现在，留在这里吧！永远永远！成为竞技场上互相厮杀的单位吧~")

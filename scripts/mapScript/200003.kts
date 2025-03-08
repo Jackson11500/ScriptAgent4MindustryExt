@@ -3,7 +3,12 @@
 package mapScript.tags
 
 import coreMindustry.MenuBuilder
+import mindustry.Vars.content
+import mindustry.Vars.state
+import mindustry.content.Blocks
 import mindustry.ctype.UnlockableContent
+import mindustry.gen.Call
+import mindustry.gen.Player
 import mindustry.type.Category
 import mindustry.type.ItemStack
 import mindustry.type.UnitType
@@ -44,7 +49,20 @@ val allUnlock by autoInit {
 }
 
 onEnable{
+    if (!state.rules.tags.containsKey("@liteCampaign")) {
+        state.rules.bannedBlocks.clear()
+        state.rules.bannedUnits.clear()
+        content.blocks().toList().filter { !it.isHidden && it !in state.rules.revealedBlocks }.forEach {
+            state.rules.bannedBlocks.add(it)
+        }
+        content.units().toList().filter { !it.isHidden }.forEach {
+            state.rules.bannedUnits.add(it)
+        }
+        state.rules.bannedBlocks.remove(Blocks.coreBastion)
+        state.rules.bannedBlocks.remove(Blocks.coreShard)
+    }
     state.rules.hideBannedBlocks = false
+    Call.setRules(state.rules)
 }
 
 class CoreMenu(private val player: Player) : MenuBuilder<Unit>() {

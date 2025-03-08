@@ -71,7 +71,9 @@ val name2desc = mapOf(
     "[purple][异世-发射区]" to "通关异世天灾-行星际发射终端",
     "[yellow][始与终-异世天灾]" to "见证星重获第12始源与终焉铭",
     "[purple][跃迁逃脱]" to "在末日启示录中,成功研究出最终科技",
-    "[green][逆天改命]" to "在升级模式中升级一只obviate${Iconc.unitObviate}"
+    "[green][逆天改命]" to "在升级模式中升级一只obviate${Iconc.unitObviate}",
+    "[purple][999!]" to "在博弈竞技场中大获全胜!",
+    "[green][成功的赌徒]" to "在博弈竞技场中成功逃离"
 )
 
 val buildBlocks by autoInit { mutableMapOf<PlayerProfile, MutableMap<Block, Int>>() }

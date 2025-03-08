@@ -258,7 +258,7 @@ listen<EventType.BuildDamageEvent> { e ->
 listen<EventType.BlockDestroyEvent> { e ->
     launch(Dispatchers.game) {
         yield()
-        e.tile.build!!.data.calculate()
+        e.tile.build?.data?.calculate()
     }
 }
 listen<EventType.BuildingBulletDestroyEvent> { e ->

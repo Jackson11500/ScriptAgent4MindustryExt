@@ -169,7 +169,9 @@
       "ammoTypes.cyanogen.buildingDamageMultiplier": 1
     },
     "scathe": {
-      "ammoPerShot": 15
+      "ammoTypes.carbide.spawnUnit.weapons.0.bullet.buildingDamageMultiplier": 1,
+      "ammoTypes.carbide.spawnUnit.weapons.0.bullet.splashDamageRadius": 130,
+      "ammoTypes.carbide.spawnUnit.weapons.0.bullet.fragBullet.buildingDamageMultiplier": 1,
     },
     "smite": {
       "ammoPerShot": 1

@@ -60,7 +60,7 @@ inner class FloodNuclearReactor(override val build: NuclearReactor.NuclearReacto
         if (build.heat >= 0.999f) {
             launch(Dispatchers.game) {
                 delay(100)
-                if (!build.isValid || !FloodUtil.enable) return@launch
+                if (!FloodUtil.enable) return@launch
                 build.tile.setNet(Blocks.thoriumReactor, FloodUtil.creepTeam, 0)
             }
             val target = findTarget() ?: return

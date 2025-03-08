@@ -16,6 +16,7 @@ import coreMindustry.util.getRomanNum
 import coreMindustry.util.polyBuild
 import coreMindustry.util.worldLabelMessage
 import mindustry.Vars
+import mindustry.ai.types.FlyingAI
 import mindustry.content.*
 import mindustry.entities.units.StatusEntry
 import mindustry.game.EventType
@@ -102,25 +103,25 @@ fun spawnFromSide(unit: UnitType): mindustry.gen.Unit {
     listOf(
             {
                 x = 0f * 8f
-                y = 0f * 8f
+                y = -10f * 8f
                 dx = 600f * 8f
                 dy = 0f * 8f
             },
             {
-                x = 0f * 8f
+                x = -10f * 8f
                 y = 0f * 8f
                 dx = 0f * 8f
                 dy = 600f * 8f
             },
             {
-                x = 600f * 8f
+                x = 610f * 8f
                 y = 0f * 8f
                 dx = 0f * 8f
                 dy = 600f * 8f
             },
             {
                 x = 0f * 8f
-                y = 600f * 8f
+                y = 610f * 8f
                 dx = 600f * 8f
                 dy = 0f * 8f
             }
@@ -136,6 +137,7 @@ fun spawnFromSide(unit: UnitType): mindustry.gen.Unit {
         add()
     }
     ts.launch(Dispatchers.game) {
+        if (u.controller() is FlyingAI) return@launch
         while (true) {
             if (u.tileOn() != null && u.tileOn().passable() && u.tileOn()?.floor()?.isDeep != true) {
                 u.elevation = 0f
@@ -243,7 +245,7 @@ val lv2Rules = listOf(
                 Team.sharded.core().items.remove(item, (amount * Random.nextFloat()).toInt())
             }
         },
-        Rule("[green][铭能重压]", "[red]友方单位获得永久减速") {
+        Rule("[purple][铭能重压]", "[red]友方单位获得永久减速") {
             ts.loop(Dispatchers.game) {
                 Team.sharded.data().units.forEach {
                     it.apply(StatusEffects.slow, Float.POSITIVE_INFINITY)
@@ -665,7 +667,7 @@ onEnable {
         quietMode = true
         Call.sendMessage(name + "<律令>暂时突破了压制，全员戒备!")
         delay(8_000)
-        applyRule(Rule("[cyan]<始源第十二铭-真理律令>","[lightgray]吾即真理。") {
+        applyRule(Rule("[cyan]<始源第十二铭-律令>","[lightgray]从现在开始，一切为我所掌控。") {
             ruleSuspend = false
             spawnDelay = 30_000L
             Vars.state.rules.apply {
@@ -705,6 +707,10 @@ onEnable {
         Call.sendMessage(nameR + "现在你的力量，能否战胜自己的过去的权柄?")
         delay(3_000)
         applyRule(Rule("[green][始源压制]", "[red](友 建造速度*0.05 建筑血量*0.05)?") {
+            val tile = Vars.world.tiles.shuffled().first()
+            ts.launch(Dispatchers.game) {
+                worldLabelMessage(tile.worldx(), tile.worldy(), "[yellow]这个就不用了啦", 3L)
+            }
             //因为辰放水了，所以这个律令完全没有生效
             /*
             Team.sharded.rules().apply {
@@ -737,9 +743,11 @@ onEnable {
         quietMode = false
         //律令充能
         var chargeScl = 1f
+        var passiveCharge = true
         launch(Dispatchers.game) {
             while (true) {
-                ruleExp += (Team.crux.cores().size.coerceAtMost(20) * 0.5f + 0.25f) * chargeScl
+                ruleExp += (Team.crux.cores().size.coerceAtMost(20) * 0.5f + 0.5f) * chargeScl
+                if (passiveCharge) ruleExp += chargeScl
                 delay(10_000L)
             }
         }
@@ -832,6 +840,7 @@ onEnable {
         }
 
         //STAGE III
+        passiveCharge = false
         quietMode = true
         var killUnit = true
         coreRebuildTime = 5_000
@@ -868,10 +877,10 @@ onEnable {
         zenithStrikeD = 20_000L
         waveTime -= 30_000L
         delay(2_000L)
-        applyRule(Rule("[双生召唤]", "[lightgray]我们同生，共死。") {
+        applyRule(Rule("[双生召唤]", "[lightgray]你的目标何时开始偏离你的初心？") {
             ts.launch(Dispatchers.game) {
                 delay(2_000L)
-                Call.sendMessage("[red]检测到终焉铭能出现...确认来自<终焉第十二铭-扭曲畸变>")
+                Call.sendMessage("[red]检测到终焉铭能出现...确认来自<终焉第十二铭-畸变>")
                 ts.launch(Dispatchers.game) {
                     val tile = Vars.world.tiles.filter { it.floor() == Blocks.cryofluid }.sortedBy { Random.nextFloat() }
                     tile.forEach {
@@ -894,7 +903,7 @@ onEnable {
         leftLv2Rules.remove(randomRule)
         applyRule(randomRule)
         delay(4_000L)
-        Call.sendMessage(name + "终焉铭..[black]是啊..我们总是相伴在一起..")
+        Call.sendMessage(name + "终焉铭...我真的不愿意想起过去的事")
         repeat(8) {
             spawnFromSide(UnitTypes.conquer).apply {
                 apply(StatusEffects.shielded, Float.POSITIVE_INFINITY)
@@ -989,55 +998,67 @@ onEnable {
         Call.sendMessage(name + "好了，观星台正在计算我们需要守住的时间，我也将刻印一些目前观星台不存在的资源")
         defStartTime = Time.millis() // 守30分钟
         exInfo = true
-        repeat(5) {
+        repeat(6) {
             Team.sharded.core().items.add(Items.beryllium, Random.nextInt(500, 1000))
             delay(100)
         }
-        repeat(5) {
+        repeat(6) {
             Team.sharded.core().items.add(Items.tungsten, Random.nextInt(250, 500))
             delay(100)
         }
-        repeat(5) {
+        repeat(6) {
             Team.sharded.core().items.add(Items.oxide, Random.nextInt(100, 500))
             delay(100)
         }
-        repeat(5) {
+        repeat(6) {
             Team.sharded.core().items.add(Items.carbide, Random.nextInt(100, 1000))
             delay(100)
         }
         Call.sendMessage(name + "我感受到大量铭能在观星台外聚集..进攻要开始激烈了")
+        delay(3_000L)
+        Call.sendMessage(name + "你们的使用过的星铭已经再次重置,好好利用他们!")
         inscription.used.clear()
         quietMode = false
         var triggerNum = 0
         while (true) {
             if (defStartTime + 300_000L <= Time.millis() && triggerNum <= 0) {
                 triggerNum += 1
-                Call.sendMessage(name + "侦测到更多陆军准备登陆!")
+                Call.sendMessage(name + "侦测到更多单位准备登陆!")
                 preWaveUnits[UnitTypes.vela] = 3
                 preWaveUnits[UnitTypes.vanquish] = 6
+                preWaveUnits[UnitTypes.antumbra] = 3
+                preWaveUnits[UnitTypes.eclipse] = 1
                 waveTime -= 15_000L
             }
             if (defStartTime + 600_000L <= Time.millis() && triggerNum <= 1) {
                 triggerNum += 1
-                Call.sendMessage(name + "侦测到更多陆军准备登陆!")
+                Call.sendMessage(name + "侦测到更多单位准备登陆!")
                 preWaveUnits[UnitTypes.vela] = 6
                 preWaveUnits[UnitTypes.reign] = 4
+                preWaveUnits[UnitTypes.mace] = 0
+                preWaveUnits[UnitTypes.fortress] = 32
+                preWaveUnits[UnitTypes.quasar] = 24
+                preWaveUnits[UnitTypes.quell] = 4
+                preWaveUnits[UnitTypes.disrupt] = 2
                 waveTime -= 15_000L
             }
             if (defStartTime + 900_000L <= Time.millis() && triggerNum <= 2) {
                 triggerNum += 1
                 Call.sendMessage(name + "检测到终焉铭能，是<畸变>开始行动了！")
+                preWaveUnits[UnitTypes.quad] = 4
+                preWaveUnits[UnitTypes.oct] = 1
                 ts.launch(Dispatchers.game) {
                     delay(20_000)
                     Call.sendMessage(name + "现在，我们血量较低的单位将会被<畸变>控制，保持住他们的血量！")
                     while (true) {
                         Groups.unit.forEach {
-                            if (it.team == Team.sharded && it.health <= it.maxHealth * 0.5f)
+                            if (it.team == Team.sharded && it.health <= it.maxHealth * 0.5f && !it.isPlayer)
                                 it.team = Team.crux
                         }
                         delay (500)
                     }
                 }
+                waveTime -= 15_000L
             }
             if (defStartTime + 1200_000L <= Time.millis() && triggerNum <= 3) {
                 triggerNum += 1
@@ -1045,15 +1066,56 @@ onEnable {
                     coreRebuild = false
                 })
                 delay(2_000)
+                Call.sendMessage(nameR + "希望你们的刻印核心还好~")
+                delay(3_000)
                 Call.sendMessage(name + "还有10分钟，坚持住！")
+                waveTime -= 15_000L
             }
             if (defStartTime + 1500_000L <= Time.millis() && triggerNum <= 4) {
                 triggerNum += 1
-                applyRule(Rule("[孤注一掷]", "[red]陆军登录无冷却时间") {
+                applyRule(Rule("[孤注一掷]", "[red]登录无冷却时间") {
                     waveTime = 0L
                 })
                 delay(2_000)
                 Call.sendMessage(name + "这将是最后一波攻势...来吧！")
+                ts.launch(Dispatchers.game) {
+                    while(true) {
+                        if (Team.sharded.cores().size <= 8 && triggerNum <= 5) {
+                            Team.sharded.rules().blockHealthMultiplier += 0.2f
+                            Team.sharded.rules().blockDamageMultiplier += 0.2f
+                            Team.sharded.rules().unitHealthMultiplier += 0.2f
+                            Team.sharded.rules().unitDamageMultiplier += 0.2f
+                            Call.setRules(Vars.state.rules)
+                            triggerNum += 1
+                        }
+                        if (Team.sharded.cores().size <= 4 && triggerNum <= 5) {
+                            Team.sharded.rules().blockHealthMultiplier += 0.2f
+                            Team.sharded.rules().blockDamageMultiplier += 0.2f
+                            Team.sharded.rules().unitHealthMultiplier += 0.2f
+                            Team.sharded.rules().unitDamageMultiplier += 0.2f
+                            Call.setRules(Vars.state.rules)
+                            triggerNum += 1
+                        }
+                        if (Team.sharded.cores().size <= 2 && triggerNum <= 6) {
+                            Team.sharded.rules().blockHealthMultiplier += 0.2f
+                            Team.sharded.rules().blockDamageMultiplier += 0.2f
+                            Team.sharded.rules().unitHealthMultiplier += 0.2f
+                            Team.sharded.rules().unitDamageMultiplier += 0.2f
+                            Call.setRules(Vars.state.rules)
+                            triggerNum += 1
+                        }
+                        if (Team.sharded.cores().size <= 1 && triggerNum <= 7) {
+                            Team.sharded.rules().blockHealthMultiplier += 0.2f
+                            Team.sharded.rules().blockDamageMultiplier += 0.2f
+                            Team.sharded.rules().unitHealthMultiplier += 0.2f
+                            Team.sharded.rules().unitDamageMultiplier += 0.2f
+                            Call.setRules(Vars.state.rules)
+                            triggerNum += 1
+                            break
+                        }
+                        yield()
+                    }
+                }
             }
             if (defStartTime + 1800_000L <= Time.millis()) {
                 break

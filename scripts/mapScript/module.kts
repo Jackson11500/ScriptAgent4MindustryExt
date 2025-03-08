@@ -121,8 +121,14 @@ GeneratorSupport//init
 command("mapScriptLoad", "测试: 加载指定地图脚本") {
     permission = "$dotId.load"
     usage = "<script>"
+    aliases = listOf("msl")
     body {
-        val script = arg.firstOrNull() ?: replyUsage()
-        loadMapScript(script)
+        val num = arg.firstOrNull()?.toIntOrNull()
+        if (num != null) {
+            loadMapScript("mapScript/$num")
+        } else {
+            val script = arg.firstOrNull() ?: replyUsage()
+            loadMapScript(script)
+        }
     }
 }
