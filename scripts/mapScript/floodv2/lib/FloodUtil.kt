@@ -80,7 +80,8 @@ object FloodUtil {
             script.logger.log(Level.WARNING, "加载CT文件失败", it)
         }
         healthToBlock = sortedMapOf(*creeperBlocks.map { it.health.toFloat() to it }.toTypedArray())
-        maxCreep = creepToHealthInv(creeperBlocks.maxOf { it.health - 0.01f })
+        //maxCreep = creepToHealthInv(creeperBlocks.maxOf { it.health - 0.01f }) + 100f
+        maxCreep = 999f     //移除最大水层限制，防止水源堆积
         statistics["最高水层"] = maxCreep.toString()
         Vars.state.rules.reactorExplosions = false
         Vars.state.rules.modeName = "FloodV2"

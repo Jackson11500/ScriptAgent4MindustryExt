@@ -1,46 +1,46 @@
 {
   "block": {
     "scrap-wall": {
-      "health": 150,
+      "health": 100,
       "solid": false
     },
     "copper-wall": {
-      "health": 400,
+      "health": 250,
       "solid": false
     },
     "titanium-wall": {
-      "health": 750,
+      "health": 500,
       "solid": false
     },
     "beryllium-wall": {
-      "health": 1200,
+      "health": 1000,
       "solid": false,
       "armor": 0
     },
     "thorium-wall": {
-      "health": 2200,
+      "health": 2500,
       "solid": false
     },
     "tungsten-wall": {
-      "health": 4500,
+      "health": 5000,
       "solid": false,
       "armor": 0
     },
     "phase-wall": {
-      "health": 7500,
+      "health": 10000,
       "solid": false,
       "chanceDeflect": 0,
       "flashHit": false
     },
     "plastanium-wall": {
-      "health": 12000,
+      "health": 12500,
       "solid": false,
       "insulated": false,
       "absorbLasers": false,
       "armor": 2
     },
     "surge-wall": {
-      "health": 16000,
+      "health": 15000,
       "solid": false,
       "lightningChance": 0,
       "armor": 5
@@ -54,7 +54,6 @@
     "carbide-wall": {
       "health": 25000,
       "solid": false,
-      "lightningChance": 0,
       "armor": 20
     },
     "mender": {
@@ -89,11 +88,11 @@
       "ammoTypes.oil.damage": 3
     },
     "lancer": {
-      "shootType.buildingDamageMultiplier": 0.5,
-      "shootType.pierceCap": 6
+      "shootType.buildingDamageMultiplier": 1,
+      "shootType.pierceCap": 4
     },
     "arc": {
-      "shootType.buildingDamageMultiplier": 0.5
+      "shootType.buildingDamageMultiplier": 1
     },
     "swarmer": {
       "ammoTypes.blast-compound.damage": 60,
@@ -125,13 +124,13 @@
     "fuse": {
       "reload": 600,
       "range": 150,
-      "ammoTypes.titanium.damage": 660,
+      "ammoTypes.titanium.damage": 1500,
       "ammoTypes.titanium.ammoMultiplier": 2,
       "ammoTypes.titanium.length": 160,
-      "ammoTypes.thorium.damage": 1000,
+      "ammoTypes.thorium.damage": 2500,
       "ammoTypes.thorium.ammoMultiplier": 1,
       "ammoTypes.thorium.length": 165,
-      "ammoPerShot": 6
+      "ammoPerShot": 15
     },
     "cyclone": {
       "ammoTypes.metaglass.ammoMultiplier": 3,
@@ -171,7 +170,7 @@
     "scathe": {
       "ammoTypes.carbide.spawnUnit.weapons.0.bullet.buildingDamageMultiplier": 1,
       "ammoTypes.carbide.spawnUnit.weapons.0.bullet.splashDamageRadius": 130,
-      "ammoTypes.carbide.spawnUnit.weapons.0.bullet.fragBullet.buildingDamageMultiplier": 1,
+      "ammoTypes.carbide.spawnUnit.weapons.0.bullet.fragBullet.buildingDamageMultiplier": 1
     },
     "smite": {
       "ammoPerShot": 1
@@ -299,7 +298,7 @@
     "vanquish": {
       "speed": 0.95,
       "rotateSpeed": 2.6,
-      "crushDamage": 10
+      "crushDamage": 5
     },
     "conquer": {
       "speed": 0.75,

@@ -7,6 +7,29 @@ import mindustry.world.Block
 
 name = "FloodV2 - 间歇泉"
 
+val map = mapOf(
+    Blocks.container to Charged(
+        10f * (1 + 1 / 0.3f), 2f, protectDps = 500f,
+        charge = 0.3f to 900f
+    ),
+    Blocks.vault to Charged(
+        30f * (1 + 1 / 0.3f), 2f, protectDps = 1500f,
+        charge = 0.3f to 900f
+    ),
+    Blocks.launchPad to Charged(
+        20f * (1 + 1 / 0.3f), 1f, protectDps = 1000f,
+        charge = 0.3f to 900f,
+        maxLayer = 10f,
+        upgrade = 20 * 30f to Blocks.interplanetaryAccelerator,
+    ),
+    Blocks.interplanetaryAccelerator to Charged(
+        100f * (1 + 1 / 0.5f), 2f, protectDps = 3000f,
+        charge = 0.5f to 2400f
+    ),
+)
+
+Emitter.emitterMap.putAll(map)
+
 /**
  * @param amt water per second
  * @param interval in second
@@ -19,6 +42,7 @@ data class Charged(
     val interval: Float,
     val protectDps: Float,
     val charge: Pair<Float, Float>,
+    val maxLayer: Float? = null,
     val upgrade: Pair<Float, Block>? = null,
 ) : (Building) -> Emitter {
 
@@ -40,23 +64,27 @@ data class Charged(
 
         override fun update() {
             val (speed, cap) = charge
-            if (emitting) {
-                if (build.enabled && timer[interval * 60]) {
-                    val amt2 = amt * interval / build.block.size / build.block.size
-                    build.tile.getLinkedTiles { FloodUtil.creepMap[it] += amt2 }
-                }
-
-                if (timer[1, cap]) {
-                    emitting = false
-                    build.tile.getLinkedTiles {
-                        val delta = (FloodUtil.creepMap[it] - FloodUtil.maxCreep).coerceAtLeast(0f)
-                        overflow = (overflow + delta).coerceAtMost(maxOverFlow)
-                        FloodUtil.creepMap[it] -= delta
+            if (build.enabled) {
+                if (emitting) {
+                    if (timer[interval * 60]) {
+                        val amt2 = amt * interval / build.block.size / build.block.size
+                        build.tile.getLinkedTiles { FloodUtil.creepMap[it] += amt2 }
                     }
+
+                    if (timer[1, cap]) {
+                        emitting = false
+                        build.tile.getLinkedTiles {
+                            if (maxLayer != null && FloodUtil.creepMap[it] > maxLayer) {
+                                val delta = (FloodUtil.creepMap[it] - maxLayer).coerceAtLeast(0f)
+                                overflow = (overflow + delta).coerceAtMost(maxOverFlow)
+                                FloodUtil.creepMap[it] -= delta
+                            }
+                        }
+                    }
+                } else {
+                    if (timer[1, cap / speed])
+                        emitting = true
                 }
-            } else {
-                if (timer[1, cap / speed])
-                    emitting = true
             }
 
             val dps = build.maxHealth - build.health
@@ -89,31 +117,9 @@ data class Charged(
                                 (overflow + overFlowOffset) / chargedEmitterProtectCost, overFlowCost
                             )
                         )
-                    } else append("[stat]目标[white] 达到所需DPS")
+                    } else append("[stat]\uE809[white] 达到所需DPS")
                 }
             }
         }
     }
 }
-
-val map = mapOf(
-    Blocks.container to Charged(
-        10f * (1 + 1 / 0.3f), 2f, protectDps = 500f,
-        charge = 0.3f to 900f
-    ),
-    Blocks.vault to Charged(
-        30f * (1 + 1 / 0.3f), 2f, protectDps = 1500f,
-        charge = 0.3f to 900f
-    ),
-    Blocks.launchPad to Charged(
-        20f * (1 + 1 / 0.3f), 1f, protectDps = 1000f,
-        charge = 0.3f to 900f,
-        upgrade = 20 * 30f to Blocks.interplanetaryAccelerator,
-    ),
-    Blocks.interplanetaryAccelerator to Charged(
-        100f * (1 + 1 / 0.5f), 2f, protectDps = 3000f,
-        charge = 0.5f to 2400f
-    ),
-)
-
-Emitter.emitterMap.putAll(map)
