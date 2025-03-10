@@ -8,27 +8,27 @@ import arc.math.geom.Position
 import coreLibrary.lib.config
 import coreMindustry.lib.game
 import coreMindustry.lib.listen
-import mapScript.floodV2.Module
 import mapScript.floodV2.lib.BuildingBinder
 import mapScript.floodV2.lib.BuildingTracker
 import mapScript.floodV2.lib.FloodUtil
+import mapScript.floodV2.lib.FloodUtil.creepMap
+import mapScript.floodV2.lib.FloodUtil.maxCreep
 import mapScript.floodV2.lib.depositCreeper
 import mindustry.Vars.tilesize
 import mindustry.Vars.world
 import mindustry.content.Blocks
 import mindustry.content.Fx
 import mindustry.content.Items
+import mindustry.content.Liquids
 import mindustry.entities.bullet.ArtilleryBulletType
 import mindustry.entities.bullet.BulletType
 import mindustry.game.EventType
-import mindustry.gen.Bullet
-import mindustry.gen.Call
-import mindustry.gen.CreateBulletCallPacket
-import mindustry.gen.Groups
+import mindustry.gen.*
 import mindustry.net.CrashSender.send
 import mindustry.world.Tile
 import mindustry.world.blocks.defense.turrets.ItemTurret
 import mindustry.world.blocks.power.NuclearReactor
+import mindustry.world.blocks.power.HeaterGenerator
 
 
 val sporeOffset by config.key(16f, "孢子目标随机范围")
@@ -49,7 +49,7 @@ val sporeType by lazy {
 }
 
 //reactor
-inner class FloodNuclearReactor(override val build: NuclearReactor.NuclearReactorBuild) :
+inner class FloodSingleThrower(override val build: NuclearReactor.NuclearReactorBuild) :
     BuildingBinder<NuclearReactor.NuclearReactorBuild> {
     override fun update() {
         if (Mathf.chance(0.3 / 60))
@@ -69,7 +69,7 @@ inner class FloodNuclearReactor(override val build: NuclearReactor.NuclearReacto
     }
 }
 
-val tracker = BuildingTracker.new(false, FloodUtil::enable, ::FloodNuclearReactor) {
+val tracker = BuildingTracker.new(false, FloodUtil::enable, ::FloodSingleThrower) {
     it.team() == FloodUtil.creepTeam
 }
     .listenChange(this)
@@ -80,8 +80,44 @@ listen<EventType.BlockDestroyEvent> {
     tracker.map[it.tile.build]?.onDestroy()
 }
 
-//spore
+//super spore thrower
+inner class FloodPackThrower(override val build: HeaterGenerator.HeaterGeneratorBuild) :
+    BuildingBinder<HeaterGenerator.HeaterGeneratorBuild> {
+        protected val label = WorldLabel.create()!!.apply {
+            set(build)
+            add()
+        }
 
+        override fun onRemove(resetEvent: Boolean) {
+            label.hide()
+        }
+
+    override fun update() {
+        build.liquids.add(Liquids.neoplasm, 0.001f)
+        label.text = buildString {
+            append("[red]⚠[] - [stat] ${(build.liquids.get(Liquids.neoplasm) * 2f).toInt()}%[]\n")
+        }
+        if (build.liquids.get(Liquids.neoplasm) >= 50f) {
+            launch(Dispatchers.game) {
+                delay(100)
+                if (!FloodUtil.enable) return@launch
+                build.tile.setNet(Blocks.neoplasiaReactor, FloodUtil.creepTeam, 0)
+            }
+            repeat(20){
+                val target = findTarget(extraRange = 100f) ?: return
+                sporeType.create(build, target)
+            }
+        }
+    }
+}
+
+BuildingTracker.new(false, FloodUtil::enable, ::FloodPackThrower) {
+    it.team() == FloodUtil.creepTeam
+}
+    .listenChange(this)
+    .listenLifecycle(this, { true })
+
+//spore
 class SporeBullet(private val origin: BulletType) : ArtilleryBulletType() {
     fun create(from: Position, target: Position) {
         val time = (from.dst(target) / speed).coerceAtMost(lifetime)
@@ -118,12 +154,12 @@ class SporeBullet(private val origin: BulletType) : ArtilleryBulletType() {
     }
 }
 
-fun findTarget(): Tile? {
+fun findTarget(extraRange: Float = 0f): Tile? {
     repeat(10) {
         val target = Groups.player.filter { it.unit().isValid }.randomOrNull() ?: return@repeat
         repeat(100) {
-            val x = target.x + Mathf.random(sporeOffset * tilesize)
-            val y = target.y + Mathf.random(sporeOffset * tilesize)
+            val x = target.x + Mathf.random((sporeOffset + extraRange) * tilesize)
+            val y = target.y + Mathf.random((sporeOffset + extraRange) * tilesize)
             val ret = world.tileWorld(x, y)
             if (ret != null && FloodUtil.creepMap[ret] >= 0)
                 return ret

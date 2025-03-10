@@ -9,6 +9,6 @@ onEnable {
     mainScript.loadMapScript("mapScript/floodV2/emitterCore", true)
     mainScript.loadMapScript("mapScript/floodV2/forceProjector", true)
     mainScript.loadMapScript("mapScript/floodV2/mapFilter", true)
-    mainScript.loadMapScript("mapScript/floodV2/nuclearReactor", true)
+    mainScript.loadMapScript("mapScript/floodV2/spore", true)
     mainScript.loadMapScript("mapScript/floodV2/unitForceProjector", true)
 }
