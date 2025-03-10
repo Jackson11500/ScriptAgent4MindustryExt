@@ -15,6 +15,7 @@ import mindustry.Vars.state
 import mindustry.content.Blocks
 import mindustry.content.UnitTypes
 import mindustry.game.EventType
+import mindustry.game.GameStats
 import mindustry.type.UnitType
 
 //config
@@ -44,14 +45,14 @@ val creeperResistanceMap: Map<UnitType, Float> = mapOf(
 val mapRule = contextScript<coreMindustry.UtilMapRule>()
 
 listen<EventType.PlayEvent> {
-        state.rules.bannedBlocks.addAll(*creeperBlocks)
-        FloodUtil.initWorld()
+    state.rules.bannedBlocks.addAll(*creeperBlocks)
+    FloodUtil.initWorld()
 
-        // 作者及赞助名单禁止修改
-        depends("wayzer/map/mapInfo")?.import<(String, String) -> Unit>("addModeIntroduce")
-            ?.invoke(
-                "洪水模式 Flood V2", """
-        flood远古版本，平衡性和性能有较大问题。但进行了大修，平衡和算法和原版存在一定差别。以下为原说明文件
+    // 作者及赞助名单禁止修改
+    depends("wayzer/map/mapInfo")?.import<(String, String) -> Unit>("addModeIntroduce")
+        ?.invoke(
+            "洪水模式 Flood CW ver", """
+        进行大幅改动，添加、重做大量机制
         [scarlet]插件开发 WayZer 数值平衡 LuckyClover,WayZer[]
         具体更新可以参考FLOODV2指导地图（/vote map 14487）
         
@@ -67,7 +68,7 @@ listen<EventType.PlayEvent> {
         *本模式采用Flood属性包，请安装[scarlet]ContentsTweaker[]Mod，获取和服务器相同的属性设置。
         *感谢[gold]小撒,萝卜,树根,苦力怕,小K,PCX,小汤圆,小屑猫,sono,Ipecac,天幻,神域,机械师,同行,啊这怪,猫神撅,梦回,548[]为插件开发提供支持
     """.trimIndent()
-            )
+        )
 }
 onEnable {
     launch(Dispatchers.gamePost) {
@@ -75,7 +76,7 @@ onEnable {
     }
 }
 
-listen(EventType.Trigger.update) { FloodUtil.update() }
+listen(EventType.Trigger.update) { if (!state.isPaused) FloodUtil.update() }
 listen<EventType.BlockDestroyEvent> { e ->
     if (!FloodUtil.enable) return@listen
     if (e.tile.team() == FloodUtil.creepTeam) {
