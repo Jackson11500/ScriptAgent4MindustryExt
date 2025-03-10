@@ -33,9 +33,11 @@ val creeperBlocks = arrayOf(
 )
 val creeperResistanceMap: Map<UnitType, Float> = mapOf(
     UnitTypes.flare to 0.1f,
-    UnitTypes.horizon to 0.6f,
+    UnitTypes.horizon to 0.9f,
     UnitTypes.zenith to 0.1f,
     UnitTypes.quad to 0.4f,
+    UnitTypes.vanquish to 0.2f,
+    UnitTypes.conquer to 0.5f
 ).withDefault { 0f }
 
 //listen

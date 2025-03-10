@@ -8,7 +8,6 @@ import arc.util.Interval
 import arc.util.io.Writes
 import coreLibrary.lib.config
 import coreMindustry.lib.listen
-import mapScript.floodV2.Module
 import mapScript.floodV2.lib.*
 import mindustry.Vars.tilesize
 import mindustry.Vars.world

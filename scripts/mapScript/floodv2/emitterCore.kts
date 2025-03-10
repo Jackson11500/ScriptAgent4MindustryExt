@@ -4,10 +4,10 @@ import arc.math.geom.Geometry
 import arc.util.Interval
 import arc.util.Time
 import arc.util.Timer
-import mapScript.floodV2.Module
 import mindustry.gen.Building
 import mindustry.graphics.Pal
 import mindustry.type.Item
+import mindustry.content.Blocks
 import mindustry.world.Block
 import mindustry.world.blocks.power.ImpactReactor
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
@@ -18,42 +18,42 @@ val mainScript = contextScript<Module>()
 
 val map = mapOf(
     Blocks.coreShard to Core(
-        10f, 0.5f,
+        5f, 0.5f,
         maxLayer = 5f,
         upgrade = 20 * 30f to Blocks.coreFoundation,
-        nullifyAble = 3000f to 3 * 60f,
+        nullifyAble = 10000f to 3 * 60f,
     ),
     Blocks.coreFoundation to Core(
-        25f, 0.4f,
+        12f, 0.4f,
         maxLayer = 10f,
         upgrade = 100 * 30f to Blocks.coreNucleus,
-        nullifyAble = 6000f to 5 * 60f,
+        nullifyAble = 20000f to 5 * 60f,
     ),
     Blocks.coreNucleus to Core(
-        40f, 0.2f,
-        nullifyAble = 10000f to 6 * 60f,
+        20f, 0.2f,
+        nullifyAble = 100000f to 6 * 60f,
     ),
     Blocks.reinforcedContainer to Core(
-        5f, 1f,
-        nullifyAble = 1000f to 3 * 60f
+        2f, 1f,
+        nullifyAble = 2500f to 3 * 60f
     ),
     Blocks.reinforcedVault to Core(
-        15f, 1f,
-        nullifyAble = 2000f to 3 * 60f
+        8f, 1f,
+        nullifyAble = 5000f to 3 * 60f
     ),
     Blocks.coreBastion to Core(
-        25f, 0.4f,
-        nullifyAble = 5000f to 3 * 60f,
+        20f, 0.4f,
+        nullifyAble = 15000f to 3 * 60f,
         canClear = false,
     ),
     Blocks.coreCitadel to Core(
-        50f, 0.2f,
-        nullifyAble = 10000f to 5 * 60f,
+        25f, 0.2f,
+        nullifyAble = 100000f to 5 * 60f,
         canClear = false,
     ),
     Blocks.coreAcropolis to Core(
-        100f, 0.2f,
-        nullifyAble = 15000f to 6 * 60f,
+        50f, 0.2f,
+        nullifyAble = 250000f to 6 * 60f,
         canClear = false,
     )
 )
@@ -108,8 +108,7 @@ data class Core(
                 val amt2 = amt * interval / build.block.size / build.block.size
                 build.tile.getLinkedTiles {
                     if (nullified) {
-                        if (FloodUtil.creepMap[it] > FloodUtil.maxCreep)
-                            FloodUtil.creepMap[it] = FloodUtil.maxCreep
+                        FloodUtil.creepMap[it] = 0f
                     } else if (build.enabled) {
                         floodDam = calFloodDam()
                         FloodUtil.creepMap[it] = (FloodUtil.creepMap[it] + amt2 + floodDam).coerceAtLeast(0f)
@@ -123,7 +122,7 @@ data class Core(
             }
             label.text = buildString {
                 if (!build.enabled) append("[red]\uE815 已禁用 \uE815[]\n")
-                if (floodDam != 0f && build.enabled) {
+                if (floodDam != 0f) {
                     append("额外${if (floodDam > 0) "[red]出水" else "[green]吸水"} ${floodDam.toInt()}[]\n")
                 }
                 append("[stat]伤害[white] ${nullifyDamage.toInt()}/${nullDamage.toInt()}\n")
@@ -133,9 +132,9 @@ data class Core(
                 }
                 drawUpgrade(upgrade, overflow)
                 if (canClear)
-                    append("[stat]目标[white] [white]在旁边完全启动" + Blocks.impactReactor.emoji())
+                    append("[stat]\uE809[white] 启动" + Blocks.impactReactor.emoji())
                 else
-                    append("[stat]目标[white] [white]持续压制")
+                    append("[stat]\uE809[white] [white]持续压制")
             }
         }
 

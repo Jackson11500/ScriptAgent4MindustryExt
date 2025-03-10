@@ -40,8 +40,8 @@ val util = contextScript<coreMindustry.UtilMapRule>()
 val sporeType by lazy {
     util.newContent((Blocks.hail as ItemTurret).ammoTypes.values().first(), ::SporeBullet).apply {
         splashDamageRadius = 5f //spore radius
-        splashDamage = 500f //spore amount
-        damage = 1000f
+        splashDamage = 1000f //spore amount
+        damage = 3000f  // 裂解需要拦截的量
         speed = 0.45f
         lifetime = maxDistance * tilesize / speed //max
         despawnHit = true

@@ -80,7 +80,8 @@ object FloodUtil {
             script.logger.log(Level.WARNING, "加载CT文件失败", it)
         }
         healthToBlock = sortedMapOf(*creeperBlocks.map { it.health.toFloat() to it }.toTypedArray())
-        maxCreep = creepToHealthInv(creeperBlocks.maxOf { it.health - 0.01f })
+        //maxCreep = creepToHealthInv(creeperBlocks.maxOf { it.health - 0.01f }) + 100f
+        maxCreep = 999f     //移除最大水层限制，防止水源堆积
         statistics["最高水层"] = maxCreep.toString()
         Vars.state.rules.reactorExplosions = false
         Vars.state.rules.modeName = "FloodV2"
@@ -107,8 +108,8 @@ object FloodUtil {
                 tile.floor() == Blocks.metalFloor5 -> hinderMap[tile] = -1f
                 tile.floor().placeableOn.not() -> terrainMap[tile] = maxCreep
             }
-            if (tile.team() == creepTeam)
-                creepMap[tile] = creepToHealthInv(tile.build.health)
+            if (tile.team() == creepTeam && creeperBlocks.contains(tile.block()))
+                creepMap[tile] = creepToHealthInv(tile.block().health.toFloat())
         }
         otherBuildsTracker.load()
         Emitter.initWorld()
@@ -116,36 +117,7 @@ object FloodUtil {
         launchCreeperDraw()
         launchCreeperUpdate()
     }
-/*
-private val timer = Interval(3)
-    fun update() {
-        if (enable) {
-            Vars.state.teams[creepTeam]?.plans?.clear()
-            Emitter.update()
-            if (!enable) return
-            if (timer.check(0, 10f)) {
-                val damaged = Vars.indexer.getDamaged(creepTeam).toList()
-                var damagedDraw = 0
-                Vars.indexer.getDamaged(creepTeam).forEach {
-                    updateCreep(it.tile)
-                    if (creeperDraw(it.tile)) damagedDraw++
-                }
-                statistics["Damaged建筑"] = damaged.size.toString()
-                statistics["Damaged建筑绘制"] = damagedDraw.toString()
-            }
-            if (timer.check(1, 6f * (lastBuildDamageCnt / 20 + 1))) {
-                val delta = timer.getTime(1)
-                statistics["建筑伤害耗时(ms)"] = measureTimeMillis { loopBuildDamage(delta) }.toString()
-                timer.reset(1, 0f)
-            }
-            if (timer.check(2, 6f)) {
-                val delta = timer.getTime(2)
-                loopUnitDamage(delta)
-                timer.reset(2, 0f)
-            }
-        }
-    }
-* */
+
     private val timer = Interval(3)
     fun update() {
         if (enable) {
@@ -321,7 +293,7 @@ private val timer = Interval(3)
                 if (tile?.team() != creepTeam) return@forEach
                 val creep = creepMap[tile]
                 if (creep < 1) return@forEach
-                damage(creep * (1f - type.creeperResistance) * creepUnitDamage * deltaTime / 60f)
+                damage(creep * creep * (1f - type.creeperResistance) * creepUnitDamage * deltaTime / 60f)
 
                 if (creep > 1 && Mathf.chance(2.0 * deltaTime / 60f))
                     Call.effect(Fx.bubble, x, y, 0f, creepTeam.color)
